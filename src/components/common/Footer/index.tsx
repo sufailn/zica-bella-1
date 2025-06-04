@@ -53,7 +53,7 @@ const Footer = () => {
 		
 	</div>
 	<div className="flex items-center justify-center px-6 pt-12 text-sm">
-		<span className="">© Copyright 1986. All Rights Reserved.</span>
+		<span className="">© Copyright 2025. All Rights Reserved.</span>
 	</div>
 </footer>
     );

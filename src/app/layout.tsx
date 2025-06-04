@@ -25,6 +25,7 @@ export default function RootLayout({
       <body
         className={`antialiased  ${literata.variable}`}
       >
+        
               <Navbar />
 
         {children}
