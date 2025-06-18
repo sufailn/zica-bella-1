@@ -62,7 +62,7 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
             {/* Sidebar Content */}
             <motion.div 
               className="fixed top-0 left-0 h-full w-full   shadow-lg z-40 flex flex-col p-4 " 
-              variants={sidebarVariants}
+              variants={sidebarVariants as any}
               initial="closed"
               animate="open"
               exit="closed"

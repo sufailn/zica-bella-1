@@ -8,9 +8,8 @@ import Link from 'next/link';
 export default function ContactPage() {
   return (
     <>
-    <Navbar isHome={false}/>
+    <Navbar isHome={false} />
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
       <main className="flex-1 flex flex-col items-center justify-start pt-16 pb-12 px-2">
         {/* Header Section */}
         <section className="w-full max-w-xl text-center mb-6 mt-6">
