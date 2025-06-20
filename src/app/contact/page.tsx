@@ -12,7 +12,7 @@ export default function ContactPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <main className="flex-1 flex flex-col items-center justify-start pt-16 pb-12 px-2">
         {/* Header Section */}
-        <section className="w-full max-w-xl text-center mb-6 mt-6">
+        <section className="w-full max-w-xl text-center mb-10 mt-10">
           <h1 className="text-3xl  mb-3 tracking-tight">Contact</h1>
           <p className="text-sm text-gray-600 mb-1">
             Dior Client Service Center is available Monday to Sunday from 11am to 7:30pm (IST).<br />
@@ -49,20 +49,20 @@ export default function ContactPage() {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <Link href="#" className="flex flex-col items-center">
               <div className="w-full aspect-[4/3] relative mb-2 rounded overflow-hidden">
-                <Image src="/home/image2.jpeg" alt="Women's Fashion" fill style={{objectFit:'cover'}} />
+                <Image src="/contact/image1.jpeg" alt="Women's Fashion" fill style={{objectFit:'cover'}} />
               </div>
               <span className="text-xs mt-1 border-b border-gray-400">Women's Fashion</span>
             </Link>
             <Link href="#" className="flex flex-col items-center">
               <div className="w-full aspect-[4/3] relative mb-2 rounded overflow-hidden">
-                <Image src="/home/image2.jpeg" alt="Men's Fashion" fill style={{objectFit:'cover'}} />
+                <Image src="/contact/image4.jpeg" alt="Men's Fashion" fill style={{objectFit:'cover'}} />
               </div>
               <span className="text-xs mt-1 border-b border-gray-400">Men's Fashion</span>
             </Link>
           </div>
           <div className="flex flex-col items-center">
             <div className="w-full aspect-[4/3] relative mb-2 rounded overflow-hidden max-w-xs mx-auto">
-              <Image src="/home/image2.jpeg" alt="Baby" fill style={{objectFit:'cover'}} />
+              <Image src="/contact/image2.jpeg" alt="Baby" fill style={{objectFit:'cover'}} />
             </div>
             <span className="text-xs mt-1 border-b border-gray-400">Baby</span>
           </div>

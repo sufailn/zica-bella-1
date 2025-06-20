@@ -1,21 +1,35 @@
-import Image from "next/image"
+"use client"
 import Link from "next/link";
 
-
 const Hero = () => {
-    return(
-
-        <div>
-       
-            <div className=" inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-30 bg-[url('/home/hero.jpg')] bg-cover bg-center h-[700px]">
-                <p className="text-lg mb-2 text-center">Dioriviera</p>
-                <h3 className="text-3xl font-bold mb-4 text-center">An Invitation to Venture Away</h3>
-                <Link href="/products" className="px-6 py-2 bg-white text-black rounded hover:bg-gray-200 transition text-center">
+    return (
+        <div className="relative h-[700px] overflow-hidden">
+            {/* Background image that shows until video loads */}
+            <div 
+                className="absolute top-0 left-0 w-full h-full bg-cover bg-center"
+                style={{ backgroundImage: "url('/home/hero.jpg')" }}
+            />
+            <video 
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+                poster="/home/hero.jpg"
+                className="absolute top-0 left-0 w-full h-full object-cover"
+            >
+                <source src="/home/hero.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+            </video>
+            <div className="absolute inset-0 bg-opacity-40"></div>
+            <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4">
+                <p className="text-lg mb-2">Dioriviera</p>
+                <h3 className="text-4xl font-serif mb-4">An Invitation to Venture Away</h3>
+                <Link href="/shop" className="px-6 py-2 bg-white text-black rounded-full hover:bg-gray-200 transition">
                     Discover
                 </Link>
             </div>
-    </div>
-        )
+        </div>
+    );
 }
 
 export default Hero;
