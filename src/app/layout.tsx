@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Literata } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "@/components/common/Navbar";
 
-
-const literata = Literata({
-  variable: "--font-literata",
-  subsets: ["latin"],
-  weight: ["200","300","400", "500", "600", "700"],
+const rocaston = localFont({
+  src: "../../public/fonts/Rocaston.ttf",
+  variable: "--font-rocaston",
+  display: "swap",
+  fallback: ["Inter", "system-ui", "-apple-system", "sans-serif"],
 });
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`antialiased  ${literata.variable}`}
+        className={`antialiased font-rocaston ${rocaston.variable}`}
       >
       
 

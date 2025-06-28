@@ -16,7 +16,7 @@ const ProductTitle = () => {
           </div>
           
           <div className="text-left sm:text-right">
-            <p className="text-base sm:text-lg md:text-xl font-medium text-gray-600 tracking-widest">
+            <p className="text-base sm:text-lg md:text-xl font-medium text-gray-600 tracking-widest font-numbers">
               SUMMER<br />
               2024
             </p>

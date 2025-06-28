@@ -82,7 +82,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         <h3 className="text-sm font-medium text-black uppercase tracking-wide">
           {product.name}
         </h3>
-        <p className="text-sm text-black font-medium">
+        <p className="text-sm text-black font-medium font-numbers">
           ${product.price}
         </p>
       </div>
