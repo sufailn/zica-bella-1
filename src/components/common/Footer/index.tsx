@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const Footer = () => {
     return (
-        <footer className="p-6">
+        <footer className="p-6 pt-0">
 	<div className=" flex flex-col items-start justify-between space-y-8 ">
             <hr className="w-full"/>
 

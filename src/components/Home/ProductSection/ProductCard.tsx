@@ -1,5 +1,6 @@
 "use client"
 import React from "react";
+import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -14,11 +15,12 @@ interface Product {
   soldOut?: boolean;
 }
 
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCard = ({ product,isNotLastColumn }: { product: Product, isNotLastColumn:boolean }) => {
   return (
-    <div className="group relative bg-white overflow-hidden">
-      {/* Product Image */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
+    <Link href={`/shop/${product.id}`} className="block">
+      <div className="group relative bg-white overflow-hidden pb-4 cursor-pointer" style={{borderRight: isNotLastColumn ? '2px solid #000' : 'none'}}>
+        {/* Product Image */}
+        <div className="relative h-[500px] w-full overflow-hidden bg-gray-100">
         <Swiper
           spaceBetween={0}
           slidesPerView={1}
@@ -31,7 +33,7 @@ const ProductCard = ({ product }: { product: Product }) => {
               <img
                 src={img}
                 alt={product.name}
-                className="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-300"
+                className=" h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-300"
                 loading="lazy"
               />
             </SwiperSlide>
@@ -78,7 +80,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 
       </div>      
       {/* Product Info */}
-      <div className="mt-4 space-y-1">
+      <div className="mt-4 space-y-1 px-2 text-center">
         <h3 className="text-sm font-medium text-black uppercase tracking-wide">
           {product.name}
         </h3>
@@ -87,6 +89,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         </p>
       </div>
     </div>
+    </Link>
   );
 };
 

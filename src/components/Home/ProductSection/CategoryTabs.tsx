@@ -24,8 +24,8 @@ const CategoryTabs = ({ onCategoryChange }: CategoryTabsProps) => {
   };
 
   return (
-    <div className="w-full border-b border-gray-200">
-      <nav className="flex space-x-8 overflow-x-auto">
+    <div className="w-full border-b border-gray-200 ">
+      <nav className="flex space-x-8 overflow-x-auto  scrollbar-hide">
         {categories.map((category) => (
           <button
             key={category}

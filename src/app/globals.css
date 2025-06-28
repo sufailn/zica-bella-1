@@ -37,3 +37,13 @@ input[type="number"] {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
 }
+
+/* globals.css or inside a module.css file if you're using CSS modules */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
