@@ -22,10 +22,10 @@ const Hero = () => {
             </video>
             <div className="absolute inset-0 bg-opacity-40"></div>
             <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4">
-                <p className="text-lg mb-2">Dioriviera</p>
-                <h3 className="text-4xl font-serif mb-4">An Invitation to Venture Away</h3>
+                <p className="text-lg mb-2">zica bella</p>
+                <h3 className="text-4xl font-serif mb-4">Unleash Your Style: Discover the Latest Trends!</h3>
                 <Link href="/shop" className="px-6 py-2 bg-white text-black rounded-full hover:bg-gray-200 transition">
-                    Discover
+                    view product
                 </Link>
             </div>
         </div>
