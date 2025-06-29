@@ -20,7 +20,7 @@ const ProductCard = ({ product,isNotLastColumn }: { product: Product, isNotLastC
     <Link href={`/shop/${product.id}`} className="block">
       <div className="group relative bg-white overflow-hidden pb-4 cursor-pointer" style={{borderRight: isNotLastColumn ? '2px solid #000' : 'none'}}>
         {/* Product Image */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
+        <div className="relative h-80 aspect-[3/4] w-full overflow-hidden bg-gray-100">
         <Swiper
           spaceBetween={0}
           slidesPerView={1}

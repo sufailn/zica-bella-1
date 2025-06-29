@@ -25,13 +25,13 @@ const CategoryTabs = ({ onCategoryChange }: CategoryTabsProps) => {
 
   return (
     <div className="w-full border-b border-gray-200 ">
-      <nav className="flex space-x-8 overflow-x-auto  scrollbar-hide">
+      <nav className="flex overflow-x-auto  scrollbar-hide">
         {categories.map((category) => (
           <button
             key={category}
             onClick={() => handleTabClick(category)}
             className={`
-              relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200
+              relative px-4 py-3 w-32 text-sm font-medium whitespace-nowrap transition-colors duration-200
               ${activeTab === category
                 ? 'bg-black text-white'
                 : 'text-gray-600 hover:text-gray-900'
