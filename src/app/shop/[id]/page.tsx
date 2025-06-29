@@ -41,12 +41,12 @@ const ProductDetailPage = () => {
     <div className="bg-white min-h-screen">
       <Navbar isHome={false} />
       
-      <div className="pt-24 max-w-7xl mx-auto px-4">
+      <div className="pt-24 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           
           {/* Product Images */}
           <div className="relative">
-            <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-[3/4] bg-gray-100 overflow-hidden">
               <Swiper
                 spaceBetween={0}
                 slidesPerView={1}
@@ -69,13 +69,13 @@ const ProductDetailPage = () => {
               </Swiper>
               
               {/* Custom Navigation Buttons */}
-              <button className="swiper-button-prev-custom absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button className="swiper-button-prev-custom absolute left-4 top-1/2 transform -translate-y-1/2 z-10  rounded-full p-2 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="#fff" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <button className="swiper-button-next-custom absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button className="swiper-button-next-custom absolute right-4 top-1/2 transform -translate-y-1/2 z-10  rounded-full p-2 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="#fff" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -83,7 +83,7 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Product Details */}
-          <div className="space-y-6">
+          <div className="space-y-6 px-4">
             
             {/* Product Title and Price */}
             <div className="border-b border-gray-200 pb-6">
