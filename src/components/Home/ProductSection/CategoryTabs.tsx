@@ -11,9 +11,9 @@ const CategoryTabs = ({ onCategoryChange }: CategoryTabsProps) => {
 
   const categories = [
     'VIEW ALL',
+    'T-SHIRTS',
     'SHIRTS',
-    'PANTS',
-    'JACKETS',
+    'JEANS',
     'SHOES',
     'ACCESSORIES'
   ];
@@ -24,7 +24,7 @@ const CategoryTabs = ({ onCategoryChange }: CategoryTabsProps) => {
   };
 
   return (
-    <div className="w-full border-b border-gray-200 ">
+    <div className="w-full border-b border-gray-800 ">
       <nav className="flex overflow-x-auto  scrollbar-hide">
         {categories.map((category) => (
           <button
@@ -33,8 +33,8 @@ const CategoryTabs = ({ onCategoryChange }: CategoryTabsProps) => {
             className={`
               relative px-4 py-3 w-32 text-sm font-medium whitespace-nowrap transition-colors duration-200
               ${activeTab === category
-                ? 'bg-black text-white'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white text-black'
+                : 'text-gray-400 hover:text-gray-900'
               }
             `}
           >

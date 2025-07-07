@@ -10,35 +10,35 @@ const ProductCard = lazy(() => import("@/components/Home/ProductSection/ProductC
 // Loading fallback components
 const LoadingSkeleton = () => (
   <div className="animate-pulse">
-    <div className="h-8 bg-gray-200 rounded mb-4"></div>
+    <div className="h-8 bg-black rounded mb-4"></div>
   </div>
 );
 
 const ProductCardSkeleton = () => (
   <div className="animate-pulse">
-    <div className="aspect-[3/4] bg-gray-200 rounded mb-4"></div>
-    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+    <div className="aspect-[3/4] bg-black rounded mb-4"></div>
+    <div className="h-4 bg-black rounded mb-2"></div>
+    <div className="h-4 bg-black rounded w-1/2"></div>
   </div>
 );
 
 // Shop Title Component
 const ShopTitle = () => {
   return (
-    <div className="mb-8 md:mb-12 px-4">
-      <div className="relative bg-gray-100 p-4 md:p-8">
-        <div className="absolute inset-2 md:inset-4 border-2 border-dotted border-gray-400"></div>
+    <div className="mb-8 md:mb-12 px-4 bg-black">
+      <div className="relative bg-black p-4 md:p-8">
+        <div className="absolute inset-2 md:inset-4 border-2 border-dotted border-gray-200"></div>
         
         <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-black leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight">
               SHOP<br />
               COLLECTION
             </h1>
           </div>
           
           <div className="text-left sm:text-right">
-            <p className="text-base sm:text-lg md:text-xl font-medium text-gray-600 tracking-widest font-numbers">
+            <p className="text-base sm:text-lg md:text-xl font-medium text-gray-200 tracking-widest font-numbers">
               ALL<br />
               ITEMS
             </p>
@@ -95,98 +95,88 @@ const ShopPage = () => {
   const products = [
     {
       id: 1,
-      name: "AVOINE HOODED QUILTED JACKET",
-      price: 1500,
-      images: ["/shop/image1.jpeg", "/shop/image2.jpeg", "/shop/image4.jpeg", "/shop/image5.jpeg"],
-      category: "JACKETS",
+      name: "CLASSIC WHITE TEE",
+      price: 1200,
+      images: [
+        "/shop/products/tshirt-1/p (1).jpeg",
+        "/shop/products/tshirt-1/p (2).jpeg",
+        "/shop/products/tshirt-1/p (3).jpeg",
+        "/shop/products/tshirt-1/p (4).jpeg"
+      ],
+      category: "T-SHIRTS",
       soldOut: false
     },
     {
       id: 2,
-      name: "PREMIUM QUILTED JACKET",
-      price: 1600,
-      images: ["/shop/image2.jpeg", "/shop/image3.jpeg", "/shop/image1.jpeg"],
-      category: "JACKETS",
-      soldOut: true
-    },
-    {
-      id: 3,
-      name: "CLASSIC BUTTON SHIRT",
-      price: 800,
-      images: ["/shop/image1.jpeg", "/shop/image2.jpeg"],
-      category: "SHIRTS",
+      name: "STRIPED GRAPHIC TEE",
+      price: 1400,
+      images: [
+        "/shop/products/tshirt-2/p (1).jpeg",
+        "/shop/products/tshirt-2/p (2).jpeg",
+        "/shop/products/tshirt-2/p (3).jpeg",
+        "/shop/products/tshirt-2/p (4).jpeg"
+      ],
+      category: "T-SHIRTS",
       soldOut: false
     },
     {
-      id: 4,
-      name: "OVERSIZED GRAPHIC TEE",
-      price: 600,
-      images: ["/shop/image2.jpeg", "/shop/image4.jpeg"],
-      category: "SHIRTS",
+      id: 3,
+      name: "PREMIUM COTTON TEE",
+      price: 1600,
+      images: [
+        "/shop/products/tshirt-3/p (1).jpeg",
+        "/shop/products/tshirt-3/p (2).jpeg",
+        "/shop/products/tshirt-3/p (3).jpeg",
+        "/shop/products/tshirt-3/p (4).jpeg"
+      ],
+      category: "T-SHIRTS",
       soldOut: true
     },
     {
+      id: 4,
+      name: "MINIMALIST TEE",
+      price: 1100,
+      images: [
+        "/shop/products/tshirt-4/p.jpeg"
+      ],
+      category: "T-SHIRTS",
+      soldOut: false
+    },
+    {
       id: 5,
-      name: "SLIM FIT DENIM JEANS",
-      price: 1200,
-      images: ["/shop/image4.jpeg", "/shop/image5.jpeg"],
-      category: "PANTS",
+      name: "LINEN CASUAL SHIRT",
+      price: 2200,
+      images: [
+        "/shop/products/shirt-1/p (1).jpeg",
+        "/shop/products/shirt-1/p (2).jpeg",
+        "/shop/products/shirt-1/p (3).jpeg"
+      ],
+      category: "SHIRTS",
       soldOut: false
     },
     {
       id: 6,
-      name: "CARGO SUMMER SHORTS",
-      price: 700,
-      images: ["/shop/image6.jpeg", "/shop/image3.jpeg"],
-      category: "PANTS",
+      name: "FORMAL OXFORD SHIRT",
+      price: 2500,
+      images: [
+        "/shop/products/shirt-2/p (1).jpeg",
+        "/shop/products/shirt-2/p (2).jpeg",
+        "/shop/products/shirt-2/p (3).jpeg",
+        "/shop/products/shirt-2/p (4).jpeg"
+      ],
+      category: "SHIRTS",
       soldOut: false
     },
     {
       id: 7,
-      name: "PREMIUM WOOL SWEATER",
-      price: 1100,
-      images: ["/shop/image6.jpeg", "/shop/image2.jpeg", "/shop/image4.jpeg"],
-      category: "SHIRTS",
-      soldOut: true
-    },
-    {
-      id: 8,
-      name: "CASUAL POLO SHIRT",
-      price: 900,
-      images: ["/shop/image2.jpeg", "/shop/image6.jpeg", "/shop/image1.jpeg"],
-      category: "SHIRTS",
-      soldOut: false
-    },
-    {
-      id: 9,
-      name: "LEATHER CROSSBODY BAG",
-      price: 2200,
-      images: ["/shop/image3.jpeg", "/shop/image5.jpeg"],
-      category: "ACCESSORIES",
-      soldOut: false
-    },
-    {
-      id: 10,
-      name: "DESIGNER SUNGLASSES",
-      price: 450,
-      images: ["/shop/image5.jpeg", "/shop/image1.jpeg"],
-      category: "ACCESSORIES",
-      soldOut: true
-    },
-    {
-      id: 11,
-      name: "PREMIUM SNEAKERS",
-      price: 1800,
-      images: ["/shop/image4.jpeg", "/shop/image6.jpeg"],
-      category: "SHOES",
-      soldOut: false
-    },
-    {
-      id: 12,
-      name: "CLASSIC OXFORD SHOES",
-      price: 2500,
-      images: ["/shop/image1.jpeg", "/shop/image3.jpeg"],
-      category: "SHOES",
+      name: "PREMIUM DENIM JEANS",
+      price: 3200,
+      images: [
+        "/shop/products/jeans-1/p (1).jpeg",
+        "/shop/products/jeans-1/p (2).jpeg",
+        "/shop/products/jeans-1/p (3).jpeg"
+      ],
+      category: "JEANS",
       soldOut: false
     }
   ];
@@ -196,7 +186,7 @@ const ShopPage = () => {
     : products.filter(product => product.category === activeCategory);
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-black min-h-screen">
       <Navbar isHome={false} />
       
       <div className="pt-24">

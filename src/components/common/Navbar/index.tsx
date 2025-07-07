@@ -24,7 +24,7 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
   return (
     <nav
       className={`flex items-center justify-between p-4 text-white h-20 fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-        isScrolled ? "bg-white" : "bg-transparent"
+        isScrolled ? "bg-black " : "bg-transparent "
       }`}
     >
       <div>
@@ -32,13 +32,13 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
       </div>
       <Link href="/" className="flex items-center justify-center w-full gap-2">
         <Image
-          src={isScrolled ? "/logo.png" : "/logo-white.png"}
+          src={isScrolled ? "/logo-white.png" : "/logo-white.png"}
           alt="Logo"
           width={40}
           height={50}
           className="cursor-pointer"
         />
-        <p className={isScrolled ? "text-black" : "text-white"}>ZICA BELLA</p>
+        <p className={`${isScrolled ? "text-white" : "text-white"} font-rocaston`}>ZICA BELLA</p>
       </Link>
       <div>
         {/* <IoCartOutline className={`text-3xl cursor-pointer ${isScrolled ? "text-black" : "text-white"}`} /> */}

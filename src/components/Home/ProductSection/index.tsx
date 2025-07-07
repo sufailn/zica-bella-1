@@ -1,5 +1,6 @@
 "use client";
 import { useState, lazy, Suspense, useEffect, useRef } from "react";
+import { useProducts } from "@/context/ProductContext";
 
 // Lazy load components
 const CategoryTabs = lazy(() => import("./CategoryTabs"));
@@ -9,15 +10,15 @@ const ProductTitle = lazy(() => import("./ProductTitle"));
 // Loading fallback components
 const LoadingSkeleton = () => (
   <div className="animate-pulse">
-    <div className="h-8 bg-gray-200 rounded mb-4"></div>
+    <div className="h-8 bg-gray-900 rounded mb-4"></div>
   </div>
 );
 
 const ProductCardSkeleton = () => (
   <div className="animate-pulse">
-    <div className="aspect-[3/4] bg-gray-200 rounded mb-4"></div>
-    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+    <div className="aspect-[3/4] bg-gray-900 rounded mb-4"></div>
+    <div className="h-4 bg-gray-900 rounded mb-2"></div>
+    <div className="h-4 bg-gray-900 rounded w-1/2"></div>
   </div>
 );
 
@@ -51,7 +52,7 @@ const LazyProductCard = ({ product, isNotLastColumn, index }: any) => {
     <div ref={ref}>
       {isVisible ? (
         <Suspense fallback={<ProductCardSkeleton />}>
-          <ProductCard product={product} isNotLastColumn={isNotLastColumn} />
+          <ProductCard product={product} isNotLastColumn={isNotLastColumn}  />
         </Suspense>
       ) : (
         <ProductCardSkeleton />
@@ -62,81 +63,12 @@ const LazyProductCard = ({ product, isNotLastColumn, index }: any) => {
 
 const ProductsSection = () => {
   const [activeCategory, setActiveCategory] = useState('VIEW ALL');
+  const { getProductsByCategory } = useProducts();
 
-  // Sample product data matching the UI
-  const products = [
-    {
-      id: 1,
-      name: "AVOINE HOODED QUILTED JACKET",
-      price: 1500,
-      images: ["/shop/image1.jpeg", "/shop/image2.jpeg", "/shop/image4.jpeg","/shop/image5.jpeg"],
-      category: "JACKETS",
-      soldOut: false
-    },
-    {
-      id: 2,
-      name: "AVOINE HOODED QUILTED JACKET",
-      price: 1500,
-      images: ["/shop/image2.jpeg", "/shop/image3.jpeg", "/shop/image1.jpeg"],
-      category: "JACKETS",
-      soldOut: true
-    },
-    {
-      id: 3,
-      name: "CLASSIC SHIRT",
-      price: 800,
-      images: ["/shop/image1.jpeg", "/shop/image2.jpeg"],
-      category: "SHIRTS",
-      soldOut: true
-    },
-    {
-      id: 4,
-      name: "GRAPHIC TEE",
-      price: 600,
-      images: ["/shop/image2.jpeg"],
-      category: "SHIRTS",
-      soldOut: true
-    },
-    {
-      id: 5,
-      name: "DENIM JEANS",
-      price: 1200,
-      images: ["/shop/image4.jpeg", "/shop/image5.jpeg"],
-      category: "JEANS",
-      soldOut: false
-    },
-    {
-      id: 6,
-      name: "SUMMER SHORTS",
-      price: 700,
-      images: ["/shop/image6.jpeg"],
-      category: "SHORTS",
-      soldOut: false
-    },
-    {
-      id: 7,
-      name: "WOOLEN SWEATER",
-      price: 1100,
-      images: ["/shop/image6.jpeg", "/shop/image2.jpeg", "/shop/image4.jpeg"],
-      category: "SWEATERS",
-      soldOut: true
-    },
-    {
-      id: 8,
-      name: "CASUAL POLO",
-      price: 900,
-      images: ["/shop/image2.jpeg","/shop/image6.jpeg", "/shop/image1.jpeg"],
-      category: "SHIRTS",
-      soldOut: false
-    }
-  ];
-
-  const filteredProducts = activeCategory === 'VIEW ALL' 
-    ? products 
-    : products.filter(product => product.category === activeCategory);
+  const filteredProducts = getProductsByCategory(activeCategory);
 
   return (
-    <div className="pt-8 px-0">
+    <div className="pt-8 px-0 text-white bg-black">
       {/* Category Tabs */}
       <Suspense fallback={<LoadingSkeleton />}>
         <ProductTitle />

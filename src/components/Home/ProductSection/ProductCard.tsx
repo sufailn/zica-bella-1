@@ -15,17 +15,18 @@ interface Product {
   soldOut?: boolean;
 }
 
-const ProductCard = ({ product,isNotLastColumn }: { product: Product, isNotLastColumn:boolean }) => {
+const ProductCard = ({ product,isNotLastColumn}: { product: Product, isNotLastColumn:boolean }) => {
   return (
     <Link href={`/shop/${product.id}`} className="block">
-      <div className="group relative bg-white overflow-hidden pb-4 cursor-pointer" style={{borderRight: isNotLastColumn ? '2px solid #000' : 'none'}}>
+      <div className="group relative bg-black overflow-hidden pb-4 cursor-pointer" style={{borderRight: isNotLastColumn ? '2px solid #000' : 'none'}}>
         {/* Product Image */}
-        <div className="relative h-80 aspect-[3/4] w-full overflow-hidden bg-gray-100">
+        <div className="relative h-80 aspect-[3/4] w-full overflow-hidden bg-gray-900">
         <Swiper
           spaceBetween={0}
           slidesPerView={1}
           className="h-full"
           modules={[Pagination]}
+          loop={true}
           pagination={{ clickable: true, el: undefined, bulletClass: 'swiper-pagination-bullet', bulletActiveClass: 'swiper-pagination-bullet-active', renderBullet: (index, className) => `<span class='${className}'></span>` }}
         >
           {product.images.map((img, idx) => (
@@ -42,7 +43,7 @@ const ProductCard = ({ product,isNotLastColumn }: { product: Product, isNotLastC
         
         {/* Sold Out Badge */}
         {product.soldOut && (
-          <div className="absolute top-3 right-3 bg-white px-3 py-1 text-xs font-medium text-black z-20">
+          <div className="absolute top-3 right-3 bg-black px-3 py-1 text-xs font-medium text-white z-20">
             SOLD OUT
           </div>
         )}
@@ -81,10 +82,10 @@ const ProductCard = ({ product,isNotLastColumn }: { product: Product, isNotLastC
       </div>      
       {/* Product Info */}
       <div className="mt-4 space-y-1 px-2 text-center">
-        <h3 className="text-sm font-medium text-black uppercase tracking-wide">
+        <h3 className="text-sm font-medium text-white uppercase tracking-wide">
           {product.name}
         </h3>
-        <p className="text-sm text-black font-medium font-numbers">
+          <p className="text-sm text-white font-medium font-poppins">
           ${product.price}
         </p>
       </div>

@@ -3,19 +3,19 @@ import Image from "next/image";
 
 const Footer = () => {
     return (
-        <footer className="p-6 pt-0">
+        <footer className="p-6 pt-0 text-white bg-black">
 	<div className=" flex flex-col items-start justify-between space-y-8 ">
             <hr className="w-full"/>
 
         <div className="flex items-center space-x-4">
             <Image 
-                src="/logo.png"
+                src="/logo-white.png"
                 alt="Logo"
                 width={100}
                 height={50}
                 className="h-12 w-auto "
             />
-            <h2>ZICA BELLA</h2>
+            <h2 className="font-rocaston">ZICA BELLA</h2>
         </div>
 
 		<div className="flex flex-col space-y-4 w-full">

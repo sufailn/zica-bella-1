@@ -42,7 +42,7 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
         onClick={toggleSidebar}
         className={`fixed top-4 left-4 z-50 p-2 rounded-md  ${!isOpen ? 'text-white': 'hidden'}`}
       >
-        <CiMenuFries size={24} className={`${isScrolled ? 'text-black' : 'text-white'}`}/>
+        <CiMenuFries size={24} className={`${isScrolled ? 'text-white' : 'text-white'}`}/>
       </button>
 
       {/* Sidebar */}

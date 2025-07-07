@@ -2,12 +2,21 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "@/components/common/Navbar";
+import { Poppins } from "next/font/google";
+import { ProductProvider } from "@/context/ProductContext";
 
 const rocaston = localFont({
   src: "../../public/fonts/Rocaston.ttf",
   variable: "--font-rocaston",
   display: "swap",
   fallback: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  variable: "--font-poppins",
+  display: "swap",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -23,11 +32,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`antialiased font-rocaston ${rocaston.variable}`}
+        className={`antialiased ${poppins.variable} bg-black`}
       >
-      
-
-        {children}
+        <ProductProvider>
+          {children}
+        </ProductProvider>
       </body>
     </html>
   );
