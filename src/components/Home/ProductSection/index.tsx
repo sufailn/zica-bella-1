@@ -24,35 +24,38 @@ const ProductCardSkeleton = () => (
 
 // Lazy Product Card Wrapper with Intersection Observer
 const LazyProductCard = ({ product, isNotLastColumn, index }: any) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(index < 4); // render first 4 cards immediately
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (index < 4) return; // skip observer for first 4
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          observer.disconnect();
+          observer.unobserve(entry.target);
         }
       },
       {
         threshold: 0.1,
-        rootMargin: '50px'
+        rootMargin: "50px",
       }
     );
 
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
+    if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
-  }, []);
+  }, [index]);
 
   return (
     <div ref={ref}>
       {isVisible ? (
         <Suspense fallback={<ProductCardSkeleton />}>
-          <ProductCard product={product} isNotLastColumn={isNotLastColumn}  />
+          <ProductCard
+            product={product}
+            isNotLastColumn={isNotLastColumn}
+            index={index} // Pass index to ProductCard
+          />
         </Suspense>
       ) : (
         <ProductCardSkeleton />
@@ -62,30 +65,30 @@ const LazyProductCard = ({ product, isNotLastColumn, index }: any) => {
 };
 
 const ProductsSection = () => {
-  const [activeCategory, setActiveCategory] = useState('VIEW ALL');
+  const [activeCategory, setActiveCategory] = useState("VIEW ALL");
   const { getProductsByCategory } = useProducts();
-
   const filteredProducts = getProductsByCategory(activeCategory);
 
   return (
     <div className="pt-8 px-0 text-white bg-black">
-      {/* Category Tabs */}
+      {/* Title and Tabs */}
       <Suspense fallback={<LoadingSkeleton />}>
         <ProductTitle />
       </Suspense>
-      
+
       <Suspense fallback={<LoadingSkeleton />}>
         <CategoryTabs onCategoryChange={setActiveCategory} />
       </Suspense>
-      
+
       {/* Products Grid */}
       <div className="mt-8 grid grid-cols-2 gap-x-0 lg:grid-cols-4">
         {filteredProducts.map((product, index) => {
-          const isNotLastColumn = (index + 1) % 2 !== 0 && index !== filteredProducts.length - 1;
+          const isNotLastColumn =
+            (index + 1) % 2 !== 0 && index !== filteredProducts.length - 1;
           return (
-            <LazyProductCard 
-              key={product.id} 
-              product={product} 
+            <LazyProductCard
+              key={product.id}
+              product={product}
               isNotLastColumn={isNotLastColumn}
               index={index}
             />
@@ -94,6 +97,6 @@ const ProductsSection = () => {
       </div>
     </div>
   );
-}
+};
 
 export default ProductsSection;

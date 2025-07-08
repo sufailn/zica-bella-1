@@ -79,7 +79,7 @@ const LazyProductCard = ({ product, isNotLastColumn, index }: any) => {
     <div ref={ref}>
       {isVisible ? (
         <Suspense fallback={<ProductCardSkeleton />}>
-          <ProductCard product={product} isNotLastColumn={isNotLastColumn} />
+          <ProductCard product={product} isNotLastColumn={isNotLastColumn} index={index} />
         </Suspense>
       ) : (
         <ProductCardSkeleton />

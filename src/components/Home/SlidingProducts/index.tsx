@@ -43,30 +43,30 @@ const SlidingProducts = () => {
         </div>
 
         {/* Sliding Container */}
-        <div className="relative group">
+        <div className="relative group ">
           {/* Left Arrow */}
-          {showLeftArrow && (
-            <button
-              onClick={scrollLeft}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-3 shadow-lg transition-all duration-300 opacity-0 group-hover:opacity-100"
-            >
-              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
+          <button
+            onClick={scrollLeft}
+            className="absolute left-2 top-40 -translate-y-1/2 z-10 bg-white/80 hover:bg-white border border-gray-200 rounded-full p-1 shadow transition-all duration-200"
+            aria-label="Scroll left"
+            style={{ width: 28, height: 28, display: showLeftArrow ? "block" : "none" }}
+          >
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
 
           {/* Right Arrow */}
-          {showRightArrow && (
-            <button
-              onClick={scrollRight}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 rounded-full p-3 shadow-lg transition-all duration-300 opacity-0 group-hover:opacity-100"
-            >
-              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
+          <button
+            onClick={scrollRight}
+            className="absolute right-2 top-40 -translate-y-1/2 z-10 bg-white/80 hover:bg-white border border-gray-200 rounded-full p-1 shadow transition-all duration-200"
+            aria-label="Scroll right"
+            style={{ width: 28, height: 28, display: showRightArrow ? "block" : "none" }}
+          >
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
 
           {/* Scrollable Products */}
           <div
