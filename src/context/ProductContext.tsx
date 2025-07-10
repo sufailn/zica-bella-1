@@ -1,5 +1,6 @@
 "use client";
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
+import { useToast } from './ToastContext';
 
 export interface Product {
   id: number;
@@ -20,10 +21,25 @@ export interface Product {
   description?: string;
 }
 
+export interface CartItem {
+  id: number;
+  product: Product;
+  quantity: number;
+  selectedColor?: string;
+  selectedSize?: string;
+}
+
 interface ProductContextType {
   products: Product[];
+  cart: CartItem[];
+  cartCount: number;
+  cartTotal: number;
   getProductsByCategory: (category: string) => Product[];
   getProductById: (id: number) => Product | undefined;
+  addToCart: (productId: number, quantity?: number, color?: string, size?: string) => void;
+  removeFromCart: (itemId: number) => void;
+  updateCartItemQuantity: (itemId: number, quantity: number) => void;
+  clearCart: () => void;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -201,6 +217,8 @@ const productData: Product[] = [
 ];
 
 export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [cart, setCart] = useState<CartItem[]>([]);
+
   const getProductsByCategory = (category: string): Product[] => {
     if (category === 'VIEW ALL') {
       return productData;
@@ -212,10 +230,80 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     return productData.find(product => product.id === id);
   };
 
+  const addToCart = (productId: number, quantity: number = 1, color?: string, size?: string) => {
+    const product = getProductById(productId);
+    if (!product || product.soldOut) return;
+
+    let isNewItem = false;
+
+    setCart(prevCart => {
+      // Check if item with same product, color, and size already exists
+      const existingItemIndex = prevCart.findIndex(item => 
+        item.product.id === productId && 
+        item.selectedColor === color && 
+        item.selectedSize === size
+      );
+
+      if (existingItemIndex > -1) {
+        // Update quantity of existing item
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex].quantity += quantity;
+        return updatedCart;
+      } else {
+        // Add new item to cart
+        isNewItem = true;
+        const newItem: CartItem = {
+          id: Date.now(), // Simple ID generation
+          product,
+          quantity,
+          selectedColor: color,
+          selectedSize: size
+        };
+        return [...prevCart, newItem];
+      }
+    });
+
+    // Show toast notification - need to be called outside the context
+    // This will be handled by the components using addToCart
+  };
+
+  const removeFromCart = (itemId: number) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
+  };
+
+  const updateCartItemQuantity = (itemId: number, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(itemId);
+      return;
+    }
+
+    setCart(prevCart => 
+      prevCart.map(item => 
+        item.id === itemId 
+          ? { ...item, quantity }
+          : item
+      )
+    );
+  };
+
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const cartTotal = cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+
   const value: ProductContextType = {
     products: productData,
+    cart,
+    cartCount,
+    cartTotal,
     getProductsByCategory,
-    getProductById
+    getProductById,
+    addToCart,
+    removeFromCart,
+    updateCartItemQuantity,
+    clearCart
   };
 
   return (

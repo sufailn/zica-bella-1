@@ -6,16 +6,21 @@ import Footer from "@/components/common/Footer";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from 'swiper/modules';
 import { useProducts } from "@/context/ProductContext";
+import { useToast } from "@/context/ToastContext";
+import { useRouter } from "next/navigation";
 import 'swiper/css';
 import 'swiper/css/navigation';
 
 const ProductDetailPage = () => {
   const params = useParams();
-  const { getProductById } = useProducts();
+  const router = useRouter();
+  const { getProductById, addToCart } = useProducts();
+  const { showToast } = useToast();
   const [product, setProduct] = useState<any>(null);
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -26,6 +31,37 @@ const ProductDetailPage = () => {
       }
     }
   }, [params.id, getProductById]);
+
+  const handleAddToCart = async () => {
+    if (!selectedSize) {
+      showToast('Please select a size', 'error', 3000);
+      return;
+    }
+
+    setIsAddingToCart(true);
+    
+    try {
+      addToCart(product.id, quantity, selectedColor, selectedSize);
+      showToast(`${product.name} added to cart!`, 'success', 3000);
+    } catch (error) {
+      showToast('Failed to add item to cart', 'error', 3000);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!selectedSize) {
+      showToast('Please select a size', 'error', 3000);
+      return;
+    }
+
+    // Add to cart first
+    addToCart(product.id, quantity, selectedColor, selectedSize);
+    
+    // Redirect to checkout
+    router.push('/checkout');
+  };
 
   if (!product) {
     return (
@@ -148,17 +184,43 @@ const ProductDetailPage = () => {
               </div>
             </div>
 
+            {/* Quantity Selection */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-white uppercase tracking-wide">
+                QUANTITY
+              </h3>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 border border-gray-600 text-white hover:border-gray-400 transition-colors"
+                >
+                  -
+                </button>
+                <span className="text-lg font-medium text-white min-w-[40px] text-center">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 border border-gray-600 text-white hover:border-gray-400 transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             <div className="space-y-4 pt-6">
               <button 
-                className="w-full py-4 border-2 border-white text-white font-medium hover:bg-gray-900 transition-colors duration-200 uppercase tracking-wide"
-                disabled={!selectedSize}
+                onClick={handleAddToCart}
+                disabled={!selectedSize || isAddingToCart}
+                className="w-full py-4 border-2 border-white text-white font-medium hover:bg-gray-900 transition-colors duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ADD TO CART
+                {isAddingToCart ? 'ADDING...' : 'ADD TO CART'}
               </button>
               <button 
-                className="w-full py-4 bg-white text-black font-medium hover:bg-gray-200 transition-colors duration-200 uppercase tracking-wide"
+                onClick={handleBuyNow}
                 disabled={!selectedSize}
+                className="w-full py-4 bg-white text-black font-medium hover:bg-gray-200 transition-colors duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 BUY NOW
               </button>

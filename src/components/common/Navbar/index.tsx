@@ -2,12 +2,15 @@
 import Image from "next/image";
 import { IoCartOutline } from "react-icons/io5";
 import Sidebar from "../Sidebar";
+import CartSidebar from "../CartSidebar";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useProducts } from "@/context/ProductContext";
 
 const Navbar = ({isHome}:{isHome:boolean}) => {
-  
+  const { cartCount } = useProducts();
   const [isScrolled, setIsScrolled] = useState(!isHome);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     if(isHome){
@@ -40,9 +43,25 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
         />
         <p className={`${isScrolled ? "text-white" : "text-white"} font-rocaston`}>ZICA BELLA</p>
       </Link>
-      <div>
-        {/* <IoCartOutline className={`text-3xl cursor-pointer ${isScrolled ? "text-black" : "text-white"}`} /> */}
+      <div className="relative">
+        <button 
+          onClick={() => setIsCartOpen(true)}
+          className="relative p-2"
+        >
+          <IoCartOutline className={`text-3xl cursor-pointer ${isScrolled ? "text-white" : "text-white"} hover:scale-110 transition-transform duration-200`} />
+          {cartCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+              {cartCount > 99 ? '99+' : cartCount}
+            </span>
+          )}
+        </button>
       </div>
+      
+      {/* Cart Sidebar */}
+      <CartSidebar 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+      />
     </nav>
   );
 };

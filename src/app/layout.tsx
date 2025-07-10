@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/common/Navbar";
 import { Poppins } from "next/font/google";
 import { ProductProvider } from "@/context/ProductContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 const rocaston = localFont({
   src: "../../public/fonts/Rocaston.ttf",
@@ -35,7 +36,9 @@ export default function RootLayout({
         className={`antialiased ${poppins.variable} bg-black`}
       >
         <ProductProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </ProductProvider>
       </body>
     </html>
