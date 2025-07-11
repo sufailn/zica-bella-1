@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useProducts } from '@/context/ProductContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { IoArrowBack, IoCard, IoWallet, IoCash } from 'react-icons/io5';
 import AuthModal from '@/components/common/AuthModal';
 import { useAuthModal } from '@/hooks/useAuthModal';
+import { motion } from 'framer-motion';
 
 interface CustomerInfo {
   firstName: string;
@@ -31,9 +32,86 @@ interface PaymentInfo {
   upiId?: string;
 }
 
+const LoadingSpinner = ({ message, showDelayed }: { message: string; showDelayed: boolean }) => (
+  <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="text-center">
+      <motion.div
+        className="w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      />
+      <motion.p 
+        className="text-white text-lg mb-2"
+        initial={{ opacity: 0.5 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
+      >
+        {message}
+      </motion.p>
+      {showDelayed && (
+        <motion.p 
+          className="text-gray-400 text-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          This is taking longer than usual. Checking your authentication...
+        </motion.p>
+      )}
+    </div>
+  </div>
+);
+
+const AuthPrompt = ({ authModal }: { authModal: any }) => (
+  <motion.div 
+    className="min-h-screen bg-black text-white flex items-center justify-center"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+  >
+    <div className="text-center max-w-md mx-auto px-4">
+      <motion.div
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <div className="text-6xl mb-6">🛒</div>
+        <h1 className="text-3xl font-bold mb-4">Sign In to Complete Checkout</h1>
+        <p className="text-gray-300 mb-6">
+          Please sign in to your account to proceed with checkout. This helps us save your order details and provide better service.
+        </p>
+        <div className="space-y-3">
+          <motion.button
+            onClick={authModal.openLogin}
+            className="w-full bg-white text-black px-6 py-3 rounded-md hover:bg-gray-200 transition font-medium"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Sign In to Continue
+          </motion.button>
+          <motion.button
+            onClick={authModal.openSignup}
+            className="w-full border border-white text-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition font-medium"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Create Account
+          </motion.button>
+          <Link 
+            href="/shop" 
+            className="block text-gray-400 hover:text-white transition mt-4"
+          >
+            ← Back to Shopping
+          </Link>
+        </div>
+      </motion.div>
+    </div>
+  </motion.div>
+);
+
 const CheckoutPage = () => {
   const { cart, cartTotal, clearCart } = useProducts();
-  const { isAuthenticated, userProfile, loading: authLoading } = useAuth();
+  const { isAuthenticated, userProfile, loading: authLoading, user } = useAuth();
   const authModal = useAuthModal();
   const router = useRouter();
   
@@ -58,6 +136,41 @@ const CheckoutPage = () => {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDelayedLoading, setShowDelayedLoading] = useState(false);
+  const [forceShowAuth, setForceShowAuth] = useState(false);
+  
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const delayedLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Timeout protection to prevent infinite loading
+  useEffect(() => {
+    if (authLoading) {
+      // Show "taking longer" message after 3 seconds
+      delayedLoadingTimeoutRef.current = setTimeout(() => {
+        setShowDelayedLoading(true);
+      }, 3000);
+
+      // Force show auth prompt after 10 seconds if still loading
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.warn('Checkout: Auth loading timeout, forcing auth prompt');
+        setForceShowAuth(true);
+      }, 10000);
+    } else {
+      // Clear timeouts when loading stops
+      if (delayedLoadingTimeoutRef.current) {
+        clearTimeout(delayedLoadingTimeoutRef.current);
+        setShowDelayedLoading(false);
+      }
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    }
+
+    return () => {
+      if (delayedLoadingTimeoutRef.current) clearTimeout(delayedLoadingTimeoutRef.current);
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    };
+  }, [authLoading]);
 
   // Pre-populate form with user data if authenticated
   useEffect(() => {
@@ -72,70 +185,46 @@ const CheckoutPage = () => {
     }
   }, [isAuthenticated, userProfile]);
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Redirect if cart is empty
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <motion.div 
+        className="min-h-screen bg-black text-white flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="text-center">
+          <div className="text-6xl mb-6">🛍️</div>
           <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-          <Link href="/shop" className="bg-white text-black px-6 py-3 rounded-md hover:bg-gray-200 transition">
-            Continue Shopping
-          </Link>
+          <p className="text-gray-400 mb-6">Add some amazing products to your cart first!</p>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link href="/shop" className="bg-white text-black px-6 py-3 rounded-md hover:bg-gray-200 transition font-medium">
+              Continue Shopping
+            </Link>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  // Show authentication prompt if not logged in
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-4">Sign In Required</h1>
-          <p className="text-gray-300 mb-6">
-            Please sign in to your account to proceed with checkout. This helps us save your order details and provide better service.
-          </p>
-          <div className="space-y-3">
-            <button
-              onClick={authModal.openLogin}
-              className="w-full bg-white text-black px-6 py-3 rounded-md hover:bg-gray-200 transition font-medium"
-            >
-              Sign In to Continue
-            </button>
-            <button
-              onClick={authModal.openSignup}
-              className="w-full border border-white text-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition font-medium"
-            >
-              Create Account
-            </button>
-            <Link 
-              href="/shop" 
-              className="block text-gray-400 hover:text-white transition mt-4"
-            >
-              ← Back to Shopping
-            </Link>
-          </div>
-        </div>
+  // Show loading with timeout protection
+  if (authLoading && !forceShowAuth) {
+    return <LoadingSpinner message="Checking your authentication..." showDelayed={showDelayedLoading} />;
+  }
 
+  // Show authentication prompt if not logged in OR if forced due to timeout
+  if (!isAuthenticated || forceShowAuth) {
+    return (
+      <>
+        <AuthPrompt authModal={authModal} />
         {/* Auth Modal */}
         <AuthModal
           isOpen={authModal.isOpen}
           onClose={authModal.close}
           defaultMode={authModal.mode}
         />
-      </div>
+      </>
     );
   }
 
@@ -219,7 +308,12 @@ const CheckoutPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <motion.div 
+      className="min-h-screen bg-black text-white"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -519,7 +613,7 @@ const CheckoutPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

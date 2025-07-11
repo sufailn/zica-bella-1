@@ -13,7 +13,7 @@
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.4",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^12.15.0",
+    "framer-motion": "^12.23.3",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
