@@ -1,109 +1,142 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
-import { useAuthModal } from '@/hooks/useAuthModal';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface ProfileGuardProps {
   children: React.ReactNode;
   requireAuth?: boolean;
   requireAdmin?: boolean;
+  fallback?: React.ReactNode;
 }
+
+const LoadingSpinner = () => (
+  <div className="min-h-screen bg-black flex items-center justify-center">
+    <div className="text-center">
+      <motion.div
+        className="w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      />
+      <motion.p 
+        className="text-white text-lg"
+        initial={{ opacity: 0.5 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
+      >
+        Loading your profile...
+      </motion.p>
+      <p className="text-gray-400 text-sm mt-2">
+        This may take a moment on first load
+      </p>
+    </div>
+  </div>
+);
+
+const AccessDenied = ({ message }: { message: string }) => (
+  <div className="min-h-screen bg-black flex items-center justify-center">
+    <motion.div 
+      className="text-center max-w-md mx-auto p-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="text-red-500 text-6xl mb-4">🚫</div>
+      <h1 className="text-white text-2xl font-bold mb-4">Access Denied</h1>
+      <p className="text-gray-400 mb-6">{message}</p>
+      <motion.button
+        onClick={() => window.location.href = '/'}
+        className="bg-white text-black px-6 py-2 rounded-md font-medium hover:bg-gray-200 transition"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        Go Home
+      </motion.button>
+    </motion.div>
+  </div>
+);
 
 const ProfileGuard: React.FC<ProfileGuardProps> = ({ 
   children, 
   requireAuth = false, 
-  requireAdmin = false 
+  requireAdmin = false,
+  fallback 
 }) => {
-  const { isAuthenticated, userProfile, isAdmin, loading } = useAuth();
-  const authModal = useAuthModal();
-  const [isReady, setIsReady] = useState(false);
-  const [shouldShowAccessDenied, setShouldShowAccessDenied] = useState(false);
+  const { user, userProfile, loading, isAuthenticated, isAdmin } = useAuth();
+  const [showDelayedLoading, setShowDelayedLoading] = useState(false);
 
+  // Show a different message if loading takes too long
   useEffect(() => {
-    // Wait for auth to finish loading
-    if (!loading) {
-      // Give additional time to ensure profile is fully loaded
-      const timeoutId = setTimeout(() => {
-        setIsReady(true);
-        
-        // Only show access denied if we're sure the user doesn't have admin access
-        // and we've waited enough time for the profile to load
-        if (requireAdmin && isAuthenticated && userProfile && !isAdmin) {
-          console.log('ProfileGuard: Admin access denied after profile loaded', { 
-            isAuthenticated, 
-            userProfile: userProfile?.role,
-            isAdmin 
-          });
-          setShouldShowAccessDenied(true);
-        }
-      }, 500); // Increased delay to ensure profile is fully loaded
+    if (loading) {
+      const timer = setTimeout(() => {
+        setShowDelayedLoading(true);
+      }, 3000); // Show "taking longer" message after 3 seconds
 
-      return () => clearTimeout(timeoutId);
+      return () => clearTimeout(timer);
+    } else {
+      setShowDelayedLoading(false);
     }
-  }, [loading, isAuthenticated, userProfile, isAdmin, requireAuth, requireAdmin]);
+  }, [loading]);
 
-  // Show loading while auth is being determined or while we're waiting for profile
-  if (loading || !isReady) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
-    );
-  }
+  // Show loading state
+  if (loading) {
+    if (fallback) {
+      return <>{fallback}</>;
+    }
 
-  // Handle authentication requirement
-  if (requireAuth && !isAuthenticated) {
-    authModal.openLogin();
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-4">Sign In Required</h1>
-          <p className="text-gray-300 mb-6">
-            Please sign in to access this page.
-          </p>
-          <button
-            onClick={authModal.openLogin}
-            className="bg-white text-black px-6 py-3 rounded-md hover:bg-gray-200 transition font-medium"
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            className="w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.p 
+            className="text-white text-lg"
+            initial={{ opacity: 0.5 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
           >
-            Sign In
-          </button>
+            {showDelayedLoading ? 'Still loading your profile...' : 'Loading your profile...'}
+          </motion.p>
+          <p className="text-gray-400 text-sm mt-2">
+            {showDelayedLoading 
+              ? 'Network connection might be slow, please wait...' 
+              : 'This may take a moment on first load'
+            }
+          </p>
         </div>
       </div>
     );
   }
 
-  // Handle admin requirement - only deny if we're absolutely sure
-  if (requireAdmin && isAuthenticated && shouldShowAccessDenied) {
+  // Check authentication requirement
+  if (requireAuth && !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-gray-400">You don't have permission to access this page.</p>
-          <div className="mt-4">
-            <a
-              href="/admin-setup"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-            >
-              Diagnose Admin Access
-            </a>
-          </div>
-        </div>
-      </div>
+      <AccessDenied message="You need to be signed in to access this page. Please log in to continue." />
     );
   }
 
-  // For admin-required pages, ensure we have a profile before proceeding
-  if (requireAdmin && isAuthenticated && !userProfile) {
+  // Check admin requirement
+  if (requireAdmin && !isAdmin) {
+    if (!isAuthenticated) {
+      return (
+        <AccessDenied message="You need to be signed in as an administrator to access this page." />
+      );
+    }
+    
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading profile...</p>
-        </div>
-      </div>
+      <AccessDenied message="You need administrator privileges to access this page. Contact support if you believe this is an error." />
     );
   }
 
+  // Additional check: if auth is required but profile is missing, show loading
+  if (requireAuth && isAuthenticated && !userProfile) {
+    return <LoadingSpinner />;
+  }
+
+  // All checks passed, render children
   return <>{children}</>;
 };
 
