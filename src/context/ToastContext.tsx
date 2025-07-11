@@ -20,7 +20,8 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration: number = 3000) => {
-    const id = Date.now().toString();
+    // Generate a unique ID using timestamp + random number to avoid collisions
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newToast: Toast = { id, message, type, duration };
     
     setToasts(prev => [...prev, newToast]);
@@ -47,7 +48,7 @@ const ToastContainer = () => {
   const { toasts, removeToast } = useToast();
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="fixed top-20 right-2 z-50 space-y-2">
       {toasts.map((toast) => (
         <div
           key={toast.id}

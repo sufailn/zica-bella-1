@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import { useProducts, Product as ProductType } from "@/context/ProductContext";
-import { useToast } from "@/context/ToastContext";
 import ProductSelectionModal from "@/components/common/ProductSelectionModal";
 import "swiper/css";
 import "swiper/css/pagination";
@@ -28,7 +27,6 @@ const ProductCard = ({
   index: number;
 }) => {
   const { addToCart, getProductById } = useProducts();
-  const { showToast } = useToast();
   const [inView, setInView] = useState(false);
   const [shouldRender, setShouldRender] = useState(index < 4); // initial 4 rendered
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -50,7 +48,6 @@ const ProductCard = ({
     
     // Add directly to cart if no variants
     addToCart(product.id, 1);
-    showToast(`${product.name} added to cart!`, 'success', 3000);
     
     // Show feedback
     const button = e.currentTarget as HTMLButtonElement;
@@ -63,7 +60,6 @@ const ProductCard = ({
 
   const handleModalAddToCart = (color?: string, size?: string, quantity?: number) => {
     addToCart(product.id, quantity || 1, color, size);
-    showToast(`${product.name} added to cart!`, 'success', 3000);
   };
 
   // IntersectionObserver for lazy rendering

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from 'swiper/modules';
 import { useProducts } from "@/context/ProductContext";
-import { useToast } from "@/context/ToastContext";
 import ProductSelectionModal from "@/components/common/ProductSelectionModal";
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -20,7 +19,6 @@ interface Product {
 
 const ProductCard = ({ product, isNotLastColumn }: { product: Product, isNotLastColumn: boolean }) => {
   const { addToCart, getProductById } = useProducts();
-  const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -36,9 +34,8 @@ const ProductCard = ({ product, isNotLastColumn }: { product: Product, isNotLast
       return;
     }
     
-    // Add directly to cart if no variants
-    addToCart(product.id, 1);
-    showToast(`${product.name} added to cart!`, 'success', 3000);
+          // Add directly to cart if no variants
+      addToCart(product.id, 1);
     
     // Show feedback
     const button = e.currentTarget as HTMLButtonElement;
@@ -51,7 +48,6 @@ const ProductCard = ({ product, isNotLastColumn }: { product: Product, isNotLast
 
   const handleModalAddToCart = (color?: string, size?: string, quantity?: number) => {
     addToCart(product.id, quantity || 1, color, size);
-    showToast(`${product.name} added to cart!`, 'success', 3000);
   };
 
   return (

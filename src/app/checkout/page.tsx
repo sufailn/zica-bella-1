@@ -1,9 +1,12 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProducts } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { IoArrowBack, IoCard, IoWallet, IoCash } from 'react-icons/io5';
+import AuthModal from '@/components/common/AuthModal';
+import { useAuthModal } from '@/hooks/useAuthModal';
 
 interface CustomerInfo {
   firstName: string;
@@ -30,6 +33,8 @@ interface PaymentInfo {
 
 const CheckoutPage = () => {
   const { cart, cartTotal, clearCart } = useProducts();
+  const { isAuthenticated, userProfile, loading: authLoading } = useAuth();
+  const authModal = useAuthModal();
   const router = useRouter();
   
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
@@ -54,6 +59,31 @@ const CheckoutPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Pre-populate form with user data if authenticated
+  useEffect(() => {
+    if (isAuthenticated && userProfile) {
+      setCustomerInfo(prev => ({
+        ...prev,
+        firstName: userProfile.first_name || '',
+        lastName: userProfile.last_name || '',
+        email: userProfile.email || '',
+        phone: userProfile.phone || ''
+      }));
+    }
+  }, [isAuthenticated, userProfile]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Redirect if cart is empty
   if (cart.length === 0) {
     return (
@@ -64,6 +94,47 @@ const CheckoutPage = () => {
             Continue Shopping
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  // Show authentication prompt if not logged in
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <h1 className="text-3xl font-bold mb-4">Sign In Required</h1>
+          <p className="text-gray-300 mb-6">
+            Please sign in to your account to proceed with checkout. This helps us save your order details and provide better service.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={authModal.openLogin}
+              className="w-full bg-white text-black px-6 py-3 rounded-md hover:bg-gray-200 transition font-medium"
+            >
+              Sign In to Continue
+            </button>
+            <button
+              onClick={authModal.openSignup}
+              className="w-full border border-white text-white px-6 py-3 rounded-md hover:bg-white hover:text-black transition font-medium"
+            >
+              Create Account
+            </button>
+            <Link 
+              href="/shop" 
+              className="block text-gray-400 hover:text-white transition mt-4"
+            >
+              ← Back to Shopping
+            </Link>
+          </div>
+        </div>
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={authModal.isOpen}
+          onClose={authModal.close}
+          defaultMode={authModal.mode}
+        />
       </div>
     );
   }
@@ -106,12 +177,45 @@ const CheckoutPage = () => {
     
     setIsProcessing(true);
     
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Clear cart and redirect to success page
-    clearCart();
-    router.push('/checkout/success');
+    try {
+      // Create order in database
+      const orderData = {
+        user_id: userProfile?.id,
+        cart_items: cart,
+        customer_info: customerInfo,
+        shipping_info: shippingInfo,
+        payment_info: paymentInfo,
+        subtotal: cartTotal,
+        shipping_cost: shippingCost,
+        total_amount: totalWithShipping
+      };
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const result = await response.json();
+      
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Clear cart and redirect to success page
+      clearCart();
+      router.push(`/checkout/success?order=${result.order.order_number}`);
+    } catch (error) {
+      console.error('Error creating order:', error);
+      alert('There was an error processing your order. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (

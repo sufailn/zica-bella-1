@@ -42,7 +42,6 @@ const ProductDetailPage = () => {
     
     try {
       addToCart(product.id, quantity, selectedColor, selectedSize);
-      showToast(`${product.name} added to cart!`, 'success', 3000);
     } catch (error) {
       showToast('Failed to add item to cart', 'error', 3000);
     } finally {

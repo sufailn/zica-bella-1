@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useProducts } from '@/context/ProductContext';
 
 interface CategoryTabsProps {
   onCategoryChange?: (category: string) => void;
@@ -8,25 +9,37 @@ interface CategoryTabsProps {
 
 const CategoryTabs = ({ onCategoryChange }: CategoryTabsProps) => {
   const [activeTab, setActiveTab] = useState('VIEW ALL');
+  const { categories, loading } = useProducts();
 
-  const categories = [
-    'VIEW ALL',
-    'T-SHIRTS',
-    'SHIRTS',
-    'JEANS',
-    'SHOES',
-    'ACCESSORIES'
-  ];
+  // Combine "VIEW ALL" with categories from database
+  const allCategories = ['VIEW ALL', ...categories];
 
   const handleTabClick = (category: string) => {
     setActiveTab(category);
     onCategoryChange?.(category);
   };
 
+  if (loading) {
+    return (
+      <div className="w-full border-b border-gray-800">
+        <nav className="flex overflow-x-auto scrollbar-hide">
+          <div className="flex space-x-2 p-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="w-24 h-8 bg-gray-800 rounded animate-pulse"
+              />
+            ))}
+          </div>
+        </nav>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full border-b border-gray-800 ">
       <nav className="flex overflow-x-auto  scrollbar-hide">
-        {categories.map((category) => (
+        {allCategories.map((category) => (
           <button
             key={category}
             onClick={() => handleTabClick(category)}

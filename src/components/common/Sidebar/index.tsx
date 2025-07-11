@@ -84,33 +84,46 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
                 <ul className="space-y-4">
                   <li className='flex items-center gap-2 justify-between'>
                     <Link
-                      href="/shirts"
+                      href="/shop"
                       className="text-gray-800 hover:text-blue-600 text-lg"
+                      onClick={toggleSidebar}
                     >
-                      Shirts
+                      Shop All
                     </Link>
                     <LuChevronRight className="inline-block ml-2 text-gray-500" size={22}/>
                   </li>
                   <li>
                     <Link
-                      href="/t-shirts"
+                      href="/shop?category=tshirts"
                       className="text-gray-800 hover:text-blue-600 text-lg"
+                      onClick={toggleSidebar}
                     >
                       T-Shirts
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/hoodies"
+                      href="/shop?category=shirts"
                       className="text-gray-800 hover:text-blue-600 text-lg"
+                      onClick={toggleSidebar}
                     >
-                      Hoodies
+                      Shirts
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/about-us"
+                      href="/shop?category=jeans"
                       className="text-gray-800 hover:text-blue-600 text-lg"
+                      onClick={toggleSidebar}
+                    >
+                      Jeans
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/about"
+                      className="text-gray-800 hover:text-blue-600 text-lg"
+                      onClick={toggleSidebar}
                     >
                       About Us
                     </Link>
@@ -119,6 +132,7 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
                     <Link
                       href="/contact"
                       className="text-gray-800 hover:text-blue-600 text-lg"
+                      onClick={toggleSidebar}
                     >
                       Contact
                     </Link>
