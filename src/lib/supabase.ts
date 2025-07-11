@@ -159,95 +159,155 @@ export const getCurrentUser = async () => {
   return user
 }
 
-export const getUserProfile = async (userId?: string) => {
-  const uid = userId || (await getCurrentUser())?.id
-  if (!uid) return null
+// Simple in-memory cache for user profiles
+const profileCache = new Map<string, { profile: UserProfile | null; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Prevent multiple simultaneous requests for the same profile
+const pendingRequests = new Map<string, Promise<UserProfile | null>>()
+
+// Clear cache for a specific user (useful after profile updates)
+export const clearProfileCache = (userId?: string) => {
+  if (userId) {
+    profileCache.delete(userId)
+    pendingRequests.delete(userId)
+  } else {
+    profileCache.clear()
+    pendingRequests.clear()
+  }
+}
+
+// Optimized profile fetching with caching and request batching
+export const getUserProfile = async (userId?: string, useCache = true) => {
+  try {
+    const uid = userId || (await getCurrentUser())?.id
+    if (!uid) return null
+    
+    // Check if there's already a pending request for this user
+    if (pendingRequests.has(uid)) {
+      return await pendingRequests.get(uid)!
+    }
+    
+    // Check cache first
+    if (useCache) {
+      const cached = profileCache.get(uid)
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        return cached.profile
+      }
+    }
+    
+    // Create a new request and store it to prevent duplicates
+    const profileRequest = fetchProfileFromDB(uid)
+    pendingRequests.set(uid, profileRequest)
+    
+    try {
+      const profile = await profileRequest
+      
+      // Cache the result
+      if (useCache) {
+        profileCache.set(uid, { profile, timestamp: Date.now() })
+      }
+      
+      return profile
+    } finally {
+      // Remove from pending requests when done
+      pendingRequests.delete(uid)
+    }
+  } catch (error) {
+    console.error('getUserProfile error:', error)
+    return null
+  }
+}
+
+// Internal function to fetch profile from database
+const fetchProfileFromDB = async (uid: string): Promise<UserProfile | null> => {
+  let profile: UserProfile | null = null
   
-  console.log('Fetching profile for user ID:', uid)
-  
-  // First try with the admin client since we know it works
+  // Use admin client first if available (faster and bypasses RLS)
   if (supabaseAdmin) {
-    console.log('Trying admin client first...')
-    const { data: adminData, error: adminError } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .select('*')
       .eq('id', uid)
       .single()
     
-    if (!adminError && adminData) {
-      console.log('Successfully fetched with admin client:', adminData)
-      return adminData as UserProfile
+    if (!error && data) {
+      profile = data as UserProfile
+    } else if (error?.code === 'PGRST116') {
+      // If profile doesn't exist, create it
+      profile = await createUserProfile(uid)
     }
-    
-    console.log('Admin client failed:', adminError)
   }
   
-  // Fallback to regular client (for client-side usage)
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', uid)
-    .single()
-  
-  console.log('Profile fetch result:', { data, error })
-  
-  if (error) {
-    console.error('Error fetching user profile:', error.message || error)
+  // Fallback to regular client if admin client failed
+  if (!profile) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', uid)
+      .single()
     
-    // If the profile doesn't exist, try to create it with admin client
-    if (error.code === 'PGRST116' && supabaseAdmin) {
-      console.log('Profile not found, attempting to create with admin client...')
-      const { data: user } = await supabase.auth.getUser()
-      if (user.user) {
-        const { data: newProfile, error: createError } = await supabaseAdmin
-          .from('user_profiles')
-          .insert([{
-            id: user.user.id,
-            email: user.user.email || '',
-            first_name: user.user.user_metadata?.first_name || '',
-            last_name: user.user.user_metadata?.last_name || '',
-            phone: user.user.user_metadata?.phone || '',
-            role: 'customer'
-          }])
-          .select()
-          .single()
-        
-        if (createError) {
-          console.error('Error creating user profile:', createError)
-          return null
-        }
-        
-        console.log('Created new profile:', newProfile)
-        return newProfile as UserProfile
-      }
+    if (!error && data) {
+      profile = data as UserProfile
+    } else if (error?.code === 'PGRST116') {
+      profile = await createUserProfile(uid)
+    } else if (error) {
+      console.error('Error fetching user profile:', error?.message)
     }
-    
-    return null
   }
   
-  return data as UserProfile
+  return profile
 }
 
+// Separate function to create user profile
+const createUserProfile = async (userId: string): Promise<UserProfile | null> => {
+  try {
+    if (!supabaseAdmin) return null
+    
+    // Get user data once
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== userId) return null
+    
+    const { data: newProfile, error } = await supabaseAdmin
+      .from('user_profiles')
+      .insert([{
+        id: userId,
+        email: user.email || '',
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        phone: user.user_metadata?.phone || '',
+        role: 'customer'
+      }])
+      .select()
+      .single()
+    
+    if (error) {
+      console.error('Error creating user profile:', error)
+      return null
+    }
+    
+    return newProfile as UserProfile
+  } catch (error) {
+    console.error('createUserProfile error:', error)
+    return null
+  }
+}
+
+// Optimized admin check
 export const isAdmin = async (userId?: string) => {
   try {
     const uid = userId || (await getCurrentUser())?.id
     if (!uid || !supabaseAdmin) return false
     
-    // Use service role to bypass RLS for admin check
     const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
       .eq('id', uid)
       .single()
     
-    if (error) {
-      console.error('Error checking admin status:', error)
-      return false
-    }
-    
-    return data?.role === 'admin'
+    return !error && data?.role === 'admin'
   } catch (error) {
-    console.error('Error in isAdmin:', error)
+    console.error('Error checking admin status:', error)
     return false
   }
 }

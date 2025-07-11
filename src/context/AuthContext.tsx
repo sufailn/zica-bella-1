@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, UserProfile, getUserProfile, signIn, signUp, signOut } from '@/lib/supabase';
+import { supabase, UserProfile, getUserProfile, signIn, signUp, signOut, clearProfileCache } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -14,7 +14,7 @@ interface AuthContextType {
   register: (email: string, password: string, metadata?: any) => Promise<{ error?: any }>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
-  refreshProfile: (currentUser?: User | null) => Promise<void>;
+  refreshProfile: (currentUser?: User | null, skipCache?: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,42 +28,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!user;
   const isAdmin = userProfile?.role === 'admin';
 
-  // Fetch user profile when user changes
-  const refreshProfile = async (currentUser?: User | null) => {
+  // Optimized profile refresh with caching
+  const refreshProfile = async (currentUser?: User | null, skipCache = false) => {
     const userToCheck = currentUser ?? user;
     if (userToCheck) {
-      console.log('Refreshing profile for user:', userToCheck.id);
-      const profile = await getUserProfile(userToCheck.id);
-      console.log('Got profile:', profile);
+      const profile = await getUserProfile(userToCheck.id, !skipCache);
       setUserProfile(profile);
     } else {
-      console.log('No user, clearing profile');
       setUserProfile(null);
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     const getInitialSession = async () => {
-      console.log('Getting initial session...');
-      const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('Initial session result:', {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        email: session?.user?.email,
-        sessionValid: session ? !session.expires_at || new Date(session.expires_at * 1000) > new Date() : false,
-        expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
-        error
-      });
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await refreshProfile(session.user);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error getting initial session:', error);
+          setLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await refreshProfile(session.user);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+        if (mounted) setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     getInitialSession();
@@ -72,79 +75,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.email, {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        sessionValid: session ? !session.expires_at || new Date(session.expires_at * 1000) > new Date() : false,
-        expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null
-      });
+      if (!mounted) return;
+      
+      // Clear cache on sign out or token refresh to ensure fresh data
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        clearProfileCache();
+      }
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await refreshProfile(session.user);
+        // Skip cache for sign in events to get fresh data
+        const skipCache = event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED';
+        await refreshProfile(session.user, skipCache);
       } else {
-        console.log('No session or user in auth change, clearing profile');
         setUserProfile(null);
       }
       
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []); // Removed user?.id dependency to prevent unnecessary re-runs
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
-    const { data, error } = await signIn(email, password);
-    
-    if (!error && data.user) {
-      // Profile will be fetched by the auth state change listener
+    try {
+      const { data, error } = await signIn(email, password);
+      setLoading(false);
+      return { error };
+    } catch (error) {
+      setLoading(false);
+      return { error };
     }
-    
-    setLoading(false);
-    return { error };
   };
 
   const register = async (email: string, password: string, metadata?: any) => {
     setLoading(true);
-    const { data, error } = await signUp(email, password, metadata);
-    
-    // If signup was successful, try to refresh the profile
-    if (!error && data.user) {
-      // Wait a bit for the trigger to fire
-      setTimeout(() => {
-        refreshProfile(data.user);
-      }, 1000);
+    try {
+      const { data, error } = await signUp(email, password, metadata);
+      setLoading(false);
+      return { error };
+    } catch (error) {
+      setLoading(false);
+      return { error };
     }
-    
-    setLoading(false);
-    return { error };
   };
 
   const logout = async () => {
     setLoading(true);
-    await signOut();
-    setUser(null);
-    setUserProfile(null);
-    setSession(null);
-    setLoading(false);
+    try {
+      clearProfileCache(); // Clear cache on logout
+      await signOut();
+      setUser(null);
+      setUserProfile(null);
+      setSession(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return { error: 'Not authenticated' };
 
-    const { error } = await supabase
-      .from('user_profiles')
-      .update(updates)
-      .eq('id', user.id);
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(updates)
+        .eq('id', user.id);
 
-    if (!error) {
-      await refreshProfile(user);
+      if (!error) {
+        // Clear cache and refresh profile after update
+        clearProfileCache(user.id);
+        await refreshProfile(user, true);
+      }
+
+      return { error };
+    } catch (error) {
+      return { error };
     }
-
-    return { error };
   };
 
   const value = {
