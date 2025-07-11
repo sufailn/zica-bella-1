@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// GET /api/admin/orders - Get all orders for admin
-export async function GET() {
+// GET /api/admin/orders - Get orders for admin with pagination and filters
+export async function GET(request: NextRequest) {
   try {
     if (!supabaseAdmin) {
       return NextResponse.json(
@@ -11,70 +11,134 @@ export async function GET() {
       )
     }
 
-    console.log('API: Loading orders...')
-    
-    // First check simple orders
-    const { data: simpleOrders, error: simpleError } = await supabaseAdmin
-      .from('orders')
-      .select('id, order_number, total_amount, status, created_at')
-      .limit(10)
-      
-    console.log('API: Simple orders check:', { simpleOrders, simpleError, count: simpleOrders?.length })
-    
-    // Get orders with order_items first
-    const { data: orders, error } = await supabaseAdmin
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const status = searchParams.get('status')
+    const payment_status = searchParams.get('payment_status')
+    const search = searchParams.get('search')
+    const sort_by = searchParams.get('sort_by') || 'created_at'
+    const sort_order = searchParams.get('sort_order') || 'desc'
+
+    const offset = (page - 1) * limit
+
+    // First, get orders with order_items
+    let query = supabaseAdmin
       .from('orders')
       .select(`
-        *,
-        order_items (*)
-      `)
-      .order('created_at', { ascending: false })
+        id,
+        user_id,
+        order_number,
+        status,
+        subtotal,
+        shipping_cost,
+        tax_amount,
+        total_amount,
+        payment_method,
+        payment_status,
+        shipping_address,
+        billing_address,
+        notes,
+        created_at,
+        updated_at,
+        order_items (
+          id,
+          product_id,
+          product_name,
+          product_price,
+          quantity,
+          selected_color,
+          selected_size,
+          item_total
+        )
+      `, { count: 'exact' })
 
-    console.log('API: Orders query result:', { orders, error, count: orders?.length })
+    // Apply filters
+    if (status && status !== 'all') {
+      query = query.eq('status', status)
+    }
+
+    if (payment_status && payment_status !== 'all') {
+      query = query.eq('payment_status', payment_status)
+    }
+
+    // Search functionality (basic - can be enhanced with full-text search)
+    if (search && search.trim()) {
+      query = query.or(`order_number.ilike.%${search}%`)
+    }
+
+    // Apply sorting
+    const sortColumn = ['created_at', 'total_amount', 'status'].includes(sort_by) ? sort_by : 'created_at'
+    const ascending = sort_order === 'asc'
+    
+    query = query
+      .order(sortColumn, { ascending })
+      .range(offset, offset + limit - 1)
+
+    const { data: orders, error, count } = await query
 
     if (error) {
-      console.error('API: Orders query error:', error)
+      console.error('Error loading orders:', error)
       throw error
     }
 
-    // If we have orders, get user profiles separately  
+    // Get user profiles separately to avoid foreign key issues
     let enrichedOrders = orders || []
-    
     if (orders && orders.length > 0) {
-      // Get unique user IDs from orders
       const userIds = [...new Set(orders.map(order => order.user_id))]
       
-      // Get user profiles for those users
       const { data: userProfiles, error: profilesError } = await supabaseAdmin
         .from('user_profiles')
         .select('id, first_name, last_name, email')
         .in('id', userIds)
-        
-      console.log('API: User profiles query result:', { userProfiles, profilesError, count: userProfiles?.length })
-        
+      
       if (!profilesError && userProfiles) {
-        // Create a map of user profiles for quick lookup
-        const profilesMap: Record<string, any> = userProfiles.reduce((acc, profile) => {
+        const profilesMap = userProfiles.reduce((acc, profile) => {
           acc[profile.id] = profile
           return acc
         }, {} as Record<string, any>)
         
-        // Enrich orders with user profile data
         enrichedOrders = orders.map(order => ({
           ...order,
-          user_profile: profilesMap[order.user_id] || null
+          user_profiles: profilesMap[order.user_id] || null
         }))
       }
     }
 
-    console.log('API: Enriched orders:', { count: enrichedOrders?.length })
+    // Get summary statistics (separate lightweight query)
+    const { data: stats } = await supabaseAdmin
+      .from('orders')
+      .select('status, payment_status, total_amount')
+
+    const orderStats = stats ? {
+      total: stats.length,
+      pending: stats.filter(o => o.status === 'pending').length,
+      confirmed: stats.filter(o => o.status === 'confirmed').length,
+      processing: stats.filter(o => o.status === 'processing').length,
+      shipped: stats.filter(o => o.status === 'shipped').length,
+      delivered: stats.filter(o => o.status === 'delivered').length,
+      cancelled: stats.filter(o => o.status === 'cancelled').length,
+      totalRevenue: stats.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + (o.total_amount || 0), 0)
+    } : {
+      total: 0, pending: 0, confirmed: 0, processing: 0, 
+      shipped: 0, delivered: 0, cancelled: 0, totalRevenue: 0
+    }
 
     return NextResponse.json({ 
       orders: enrichedOrders,
-      count: enrichedOrders?.length || 0 
+      count: count || 0,
+      stats: orderStats,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+        hasNext: (page * limit) < (count || 0),
+        hasPrev: page > 1
+      }
     })
   } catch (error) {
-    console.error('API: Error loading orders:', error)
+    console.error('Error loading orders:', error)
     return NextResponse.json(
       { error: 'Failed to load orders' },
       { status: 500 }
@@ -120,8 +184,6 @@ export async function POST(request: NextRequest) {
         postal_code: '12345' 
       }
     }
-
-    console.log('API: Creating test order:', testOrder)
     
     const { data, error } = await supabaseAdmin
       .from('orders')
@@ -129,14 +191,13 @@ export async function POST(request: NextRequest) {
       .select()
 
     if (error) {
-      console.error('API: Error creating test order:', error)
+      console.error('Error creating test order:', error)
       throw error
     }
 
-    console.log('API: Created test order:', data)
     return NextResponse.json({ order: data[0] })
   } catch (error) {
-    console.error('API: Error creating test order:', error)
+    console.error('Error creating test order:', error)
     return NextResponse.json(
       { error: 'Failed to create test order' },
       { status: 500 }
