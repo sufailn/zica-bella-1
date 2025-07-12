@@ -31,6 +31,13 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
     }
   }, [isHome]);
 
+  // Close user menu when user is no longer authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setShowUserMenu(false);
+    }
+  }, [isAuthenticated]);
+
   return (
     <nav
       className={`flex items-center justify-between p-4 text-white h-20 fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
