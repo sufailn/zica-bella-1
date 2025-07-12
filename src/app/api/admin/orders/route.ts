@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// Cache for admin orders data
+const adminOrdersCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
+// Helper function to check cache validity
+const isCacheValid = (timestamp: number) => {
+  return Date.now() - timestamp < CACHE_DURATION;
+};
+
+// Helper function to get cache key
+const getCacheKey = (params: URLSearchParams) => {
+  return `admin_orders_${params.toString()}`;
+};
+
 // GET /api/admin/orders - Get orders for admin with pagination and filters
 export async function GET(request: NextRequest) {
   try {
@@ -20,9 +34,21 @@ export async function GET(request: NextRequest) {
     const sort_by = searchParams.get('sort_by') || 'created_at'
     const sort_order = searchParams.get('sort_order') || 'desc'
 
+    // Check cache first
+    const cacheKey = getCacheKey(searchParams);
+    const cachedData = adminOrdersCache.get(cacheKey);
+    
+    if (cachedData && isCacheValid(cachedData.timestamp)) {
+      return NextResponse.json(cachedData.data, {
+        headers: {
+          'Cache-Control': 'public, max-age=120', // 2 minutes
+        }
+      });
+    }
+
     const offset = (page - 1) * limit
 
-    // First, get orders with order_items
+    // Build optimized query with proper joins
     let query = supabaseAdmin
       .from('orders')
       .select(`
@@ -50,6 +76,12 @@ export async function GET(request: NextRequest) {
           selected_color,
           selected_size,
           item_total
+        ),
+        user_profiles!orders_user_id_fkey (
+          id,
+          first_name,
+          last_name,
+          email
         )
       `, { count: 'exact' })
 
@@ -82,50 +114,30 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    // Get user profiles separately to avoid foreign key issues
-    let enrichedOrders = orders || []
-    if (orders && orders.length > 0) {
-      const userIds = [...new Set(orders.map(order => order.user_id))]
-      
-      const { data: userProfiles, error: profilesError } = await supabaseAdmin
-        .from('user_profiles')
-        .select('id, first_name, last_name, email')
-        .in('id', userIds)
-      
-      if (!profilesError && userProfiles) {
-        const profilesMap = userProfiles.reduce((acc, profile) => {
-          acc[profile.id] = profile
-          return acc
-        }, {} as Record<string, any>)
-        
-        enrichedOrders = orders.map(order => ({
-          ...order,
-          user_profiles: profilesMap[order.user_id] || null
-        }))
-      }
+    // Get optimized statistics using single aggregation query
+    const { data: statsData, error: statsError } = await supabaseAdmin
+      .rpc('get_order_statistics')
+      .single();
+
+    if (statsError) {
+      console.error('Error loading order statistics:', statsError);
     }
 
-    // Get summary statistics (separate lightweight query)
-    const { data: stats } = await supabaseAdmin
-      .from('orders')
-      .select('status, payment_status, total_amount')
+    // Process stats results with proper type handling
+    const stats = statsData as any;
+    const orderStats = {
+      total: Number(stats?.total_orders) || 0,
+      pending: Number(stats?.pending_orders) || 0,
+      confirmed: Number(stats?.confirmed_orders) || 0,
+      processing: Number(stats?.processing_orders) || 0,
+      shipped: Number(stats?.shipped_orders) || 0,
+      delivered: Number(stats?.delivered_orders) || 0,
+      cancelled: Number(stats?.cancelled_orders) || 0,
+      totalRevenue: Number(stats?.total_revenue) || 0
+    };
 
-    const orderStats = stats ? {
-      total: stats.length,
-      pending: stats.filter(o => o.status === 'pending').length,
-      confirmed: stats.filter(o => o.status === 'confirmed').length,
-      processing: stats.filter(o => o.status === 'processing').length,
-      shipped: stats.filter(o => o.status === 'shipped').length,
-      delivered: stats.filter(o => o.status === 'delivered').length,
-      cancelled: stats.filter(o => o.status === 'cancelled').length,
-      totalRevenue: stats.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + (o.total_amount || 0), 0)
-    } : {
-      total: 0, pending: 0, confirmed: 0, processing: 0, 
-      shipped: 0, delivered: 0, cancelled: 0, totalRevenue: 0
-    }
-
-    return NextResponse.json({ 
-      orders: enrichedOrders,
+    const response = {
+      orders: orders || [],
       count: count || 0,
       stats: orderStats,
       pagination: {
@@ -136,7 +148,29 @@ export async function GET(request: NextRequest) {
         hasNext: (page * limit) < (count || 0),
         hasPrev: page > 1
       }
-    })
+    };
+
+    // Cache the response
+    adminOrdersCache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now(),
+    });
+
+    // Clean up old cache entries periodically
+    if (adminOrdersCache.size > 50) {
+      const now = Date.now();
+      for (const [key, value] of adminOrdersCache.entries()) {
+        if (!isCacheValid(value.timestamp)) {
+          adminOrdersCache.delete(key);
+        }
+      }
+    }
+
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'public, max-age=120', // 2 minutes
+      }
+    });
   } catch (error) {
     console.error('Error loading orders:', error)
     return NextResponse.json(

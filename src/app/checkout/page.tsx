@@ -24,6 +24,21 @@ interface ShippingInfo {
   country: string;
 }
 
+interface SavedAddress {
+  id: string;
+  title: string;
+  first_name: string;
+  last_name: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  phone?: string;
+  is_default: boolean;
+}
+
 interface PaymentInfo {
   method: 'card' | 'upi' | 'cod';
   cardNumber?: string;
@@ -138,6 +153,10 @@ const CheckoutPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDelayedLoading, setShowDelayedLoading] = useState(false);
   const [forceShowAuth, setForceShowAuth] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
   
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const delayedLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -172,6 +191,48 @@ const CheckoutPage = () => {
     };
   }, [authLoading]);
 
+  // Load saved addresses
+  const loadSavedAddresses = async () => {
+    if (!userProfile?.id) return;
+    
+    setLoadingAddresses(true);
+    try {
+      const response = await fetch(`/api/addresses?user_id=${userProfile.id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load addresses');
+      }
+      
+      const data = await response.json();
+      setSavedAddresses(data.addresses || []);
+      
+      // Auto-select default address
+      const defaultAddress = data.addresses?.find((addr: SavedAddress) => addr.is_default);
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+        setShippingInfo({
+          address: `${defaultAddress.address_line1}${defaultAddress.address_line2 ? ', ' + defaultAddress.address_line2 : ''}`,
+          city: defaultAddress.city,
+          state: defaultAddress.state,
+          pincode: defaultAddress.postal_code,
+          country: defaultAddress.country
+        });
+        setCustomerInfo(prev => ({
+          ...prev,
+          firstName: defaultAddress.first_name || prev.firstName,
+          lastName: defaultAddress.last_name || prev.lastName,
+          phone: defaultAddress.phone || prev.phone
+        }));
+      } else if (data.addresses?.length === 0) {
+        setShowNewAddressForm(true);
+      }
+    } catch (error) {
+      console.error('Error loading addresses:', error);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
   // Pre-populate form with user data if authenticated
   useEffect(() => {
     if (isAuthenticated && userProfile) {
@@ -182,8 +243,33 @@ const CheckoutPage = () => {
         email: userProfile.email || '',
         phone: userProfile.phone || ''
       }));
+      
+      // Load saved addresses
+      loadSavedAddresses();
     }
   }, [isAuthenticated, userProfile]);
+
+  // Handle address selection
+  const handleAddressSelect = (addressId: string) => {
+    const address = savedAddresses.find(addr => addr.id === addressId);
+    if (address) {
+      setSelectedAddressId(addressId);
+      setShippingInfo({
+        address: `${address.address_line1}${address.address_line2 ? ', ' + address.address_line2 : ''}`,
+        city: address.city,
+        state: address.state,
+        pincode: address.postal_code,
+        country: address.country
+      });
+      setCustomerInfo(prev => ({
+        ...prev,
+        firstName: address.first_name || prev.firstName,
+        lastName: address.last_name || prev.lastName,
+        phone: address.phone || prev.phone
+      }));
+      setShowNewAddressForm(false);
+    }
+  };
 
   // Redirect if cart is empty
   if (cart.length === 0) {
@@ -382,67 +468,130 @@ const CheckoutPage = () => {
               {/* Shipping Information */}
               <div className="bg-gray-900 p-6 rounded-lg">
                 <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Address</label>
-                    <textarea
-                      value={shippingInfo.address}
-                      onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
-                      className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
-                      placeholder="Enter full address"
-                      rows={3}
-                    />
-                    {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+                
+                {/* Saved Addresses */}
+                {loadingAddresses ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <span className="ml-2 text-gray-400">Loading saved addresses...</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">City</label>
-                      <input
-                        type="text"
-                        value={shippingInfo.city}
-                        onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
-                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
-                        placeholder="Enter city"
-                      />
-                      {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">State</label>
-                      <input
-                        type="text"
-                        value={shippingInfo.state}
-                        onChange={(e) => setShippingInfo({...shippingInfo, state: e.target.value})}
-                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
-                        placeholder="Enter state"
-                      />
-                      {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Pincode</label>
-                      <input
-                        type="text"
-                        value={shippingInfo.pincode}
-                        onChange={(e) => setShippingInfo({...shippingInfo, pincode: e.target.value})}
-                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
-                        placeholder="Enter pincode"
-                      />
-                      {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Country</label>
-                      <select
-                        value={shippingInfo.country}
-                        onChange={(e) => setShippingInfo({...shippingInfo, country: e.target.value})}
-                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
+                ) : savedAddresses.length > 0 ? (
+                  <div className="space-y-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium">Saved Addresses</h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowNewAddressForm(true)}
+                        className="text-blue-400 hover:text-blue-300 text-sm"
                       >
-                        <option value="India">India</option>
-                        <option value="USA">USA</option>
-                        <option value="UK">UK</option>
-                        <option value="Canada">Canada</option>
-                      </select>
+                        + Add New Address
+                      </button>
+                    </div>
+                    
+                    <div className="grid gap-3">
+                      {savedAddresses.map((address) => (
+                        <div
+                          key={address.id}
+                          className={`p-4 border rounded-lg cursor-pointer transition ${
+                            selectedAddressId === address.id
+                              ? 'border-white bg-gray-800'
+                              : 'border-gray-600 hover:border-gray-500'
+                          }`}
+                          onClick={() => handleAddressSelect(address.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="saved-address"
+                                value={address.id}
+                                checked={selectedAddressId === address.id}
+                                onChange={() => handleAddressSelect(address.id)}
+                                className="text-white"
+                              />
+                              <div>
+                                <div className="font-medium">
+                                  {address.title} {address.is_default && '(Default)'}
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                  {address.first_name} {address.last_name}
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                  {address.address_line1}, {address.city}, {address.state} {address.postal_code}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                ) : null}
+                
+                {/* Address Form */}
+                {(showNewAddressForm || savedAddresses.length === 0) && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Address</label>
+                      <textarea
+                        value={shippingInfo.address}
+                        onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
+                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
+                        placeholder="Enter full address"
+                        rows={3}
+                      />
+                      {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">City</label>
+                        <input
+                          type="text"
+                          value={shippingInfo.city}
+                          onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
+                          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
+                          placeholder="Enter city"
+                        />
+                        {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">State</label>
+                        <input
+                          type="text"
+                          value={shippingInfo.state}
+                          onChange={(e) => setShippingInfo({...shippingInfo, state: e.target.value})}
+                          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
+                          placeholder="Enter state"
+                        />
+                        {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Pincode</label>
+                        <input
+                          type="text"
+                          value={shippingInfo.pincode}
+                          onChange={(e) => setShippingInfo({...shippingInfo, pincode: e.target.value})}
+                          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
+                          placeholder="Enter pincode"
+                        />
+                        {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Country</label>
+                        <select
+                          value={shippingInfo.country}
+                          onChange={(e) => setShippingInfo({...shippingInfo, country: e.target.value})}
+                          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:border-white focus:outline-none"
+                        >
+                          <option value="India">India</option>
+                          <option value="USA">USA</option>
+                          <option value="UK">UK</option>
+                          <option value="Canada">Canada</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Payment Information */}

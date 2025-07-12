@@ -211,7 +211,7 @@ const OrderDetailPage = () => {
                     <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(order.status)}`}>
                       {order.status}
                     </span>
-                    <p className="text-2xl font-bold mt-2">₹{order.total_amount.toLocaleString()}</p>
+                    <p className="text-2xl font-bold mt-2">₹{(order.total_amount || 0).toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -250,7 +250,7 @@ const OrderDetailPage = () => {
               <div className="bg-gray-900 p-6 rounded-lg">
                 <h2 className="text-xl font-semibold mb-4">Order Items</h2>
                 <div className="space-y-4">
-                  {order.order_items?.map((item, index) => {
+                  {order.order_items && order.order_items.length > 0 ? order.order_items.map((item, index) => {
                     const product = getProductById(item.product_id);
                     const productImage = product?.images?.[0] || null;
                     
@@ -285,14 +285,18 @@ const OrderDetailPage = () => {
                           <div className="flex justify-between items-center mt-2">
                             <span className="text-sm text-gray-400">Qty: {item.quantity}</span>
                             <div className="text-right">
-                              <p className="text-sm text-gray-400">₹{item.product_price.toLocaleString()} each</p>
-                              <p className="font-medium">₹{item.item_total.toLocaleString()}</p>
+                              <p className="text-sm text-gray-400">₹{(item.product_price || 0).toLocaleString()} each</p>
+                              <p className="font-medium">₹{(item.item_total || 0).toLocaleString()}</p>
                             </div>
                           </div>
                         </div>
                       </div>
                     );
-                  })}
+                  }) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">No items found for this order</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -319,21 +323,21 @@ const OrderDetailPage = () => {
                     <div className="border-t border-gray-700 pt-3 space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Subtotal</span>
-                        <span>₹{order.subtotal.toLocaleString()}</span>
+                        <span>₹{(order.subtotal || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Shipping</span>
-                        <span>₹{order.shipping_cost.toLocaleString()}</span>
+                        <span>₹{(order.shipping_cost || 0).toLocaleString()}</span>
                       </div>
-                      {order.tax_amount > 0 && (
+                      {(order.tax_amount || 0) > 0 && (
                         <div className="flex justify-between">
                           <span className="text-gray-400">Tax</span>
-                          <span>₹{order.tax_amount.toLocaleString()}</span>
+                          <span>₹{(order.tax_amount || 0).toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between font-semibold text-lg border-t border-gray-700 pt-2">
                         <span>Total</span>
-                        <span>₹{order.total_amount.toLocaleString()}</span>
+                        <span>₹{(order.total_amount || 0).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>

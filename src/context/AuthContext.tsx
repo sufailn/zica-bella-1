@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const initRef = useRef(false);
   const refreshingRef = useRef(false);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initializingRef = useRef(false);
 
   const isAuthenticated = !!user;
   const isAdmin = userProfile?.role === 'admin';
@@ -119,13 +120,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initRef.current = true;
 
     const initialize = async () => {
+      // Prevent multiple simultaneous initializations
+      if (initializingRef.current) {
+        console.log('Auth: Initialization already in progress, skipping...');
+        return;
+      }
+      
+      initializingRef.current = true;
       try {
         console.log('Auth: Starting initialization...');
         
-        // Get current session with timeout
+        // Get current session with more generous timeout
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
+          setTimeout(() => reject(new Error('Session fetch timeout')), 15000)
         );
         
         const { data: { session: currentSession } } = await Promise.race([
@@ -152,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const profilePromise = getUserProfile(currentSession.user.id, false);
             const profileTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
             );
             
             const profile = await Promise.race([
@@ -190,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         console.log('Auth: Initialization complete, setting loading to false');
         setLoading(false);
+        initializingRef.current = false;
       }
     };
 
