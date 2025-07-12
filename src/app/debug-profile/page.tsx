@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { supabase, getUserProfile, clearProfileCache } from '@/lib/supabase';
+import { useProfile } from '@/context/ProfileContext';
+import { supabase } from '@/lib/supabase';
 
 const ProfileDebugPage = () => {
-  const { user, userProfile, session, loading, isAuthenticated, isAdmin } = useAuth();
+  const { user, userProfile, session, loading, isAuthenticated, isAdmin, refreshProfile } = useAuth();
+  const { clearCache } = useProfile();
   const [debugInfo, setDebugInfo] = useState<any>({});
   const [refreshing, setRefreshing] = useState(false);
-  const [manualProfile, setManualProfile] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
 
   const addLog = (message: string) => {
@@ -37,12 +38,8 @@ const ProfileDebugPage = () => {
         profileRole: userProfile?.role,
         
         // LocalStorage check
-        hasStoredProfile: !!localStorage.getItem('zb_user_profile'),
-        storedUserId: localStorage.getItem('zb_user_id'),
-        storedTimestamp: localStorage.getItem('zb_session_timestamp'),
-        storedAge: localStorage.getItem('zb_session_timestamp') 
-          ? Date.now() - parseInt(localStorage.getItem('zb_session_timestamp')!) 
-          : null,
+        hasStoredProfile: !!localStorage.getItem('zb_auth_profile'),
+        storedProfile: localStorage.getItem('zb_auth_profile') ? 'Present' : 'Missing',
         
         // Environment
         userAgent: navigator.userAgent,
@@ -61,16 +58,15 @@ const ProfileDebugPage = () => {
     addLog('Starting manual profile refresh...');
     
     try {
-      clearProfileCache();
+      clearCache();
       addLog('Cache cleared');
       
       if (user) {
-        addLog(`Fetching profile for user ${user.id}...`);
-        const profile = await getUserProfile(user.id, false);
-        setManualProfile(profile);
-        addLog(`Profile fetch result: ${profile ? 'Success' : 'Failed'}`);
+        addLog(`Refreshing profile for user ${user.id}...`);
+        await refreshProfile();
+        addLog(`Profile refresh completed`);
       } else {
-        addLog('No user found for profile fetch');
+        addLog('No user found for profile refresh');
       }
     } catch (error) {
       addLog(`Error during manual refresh: ${error}`);
@@ -80,10 +76,9 @@ const ProfileDebugPage = () => {
   };
 
   const handleClearStorage = () => {
-    localStorage.removeItem('zb_user_profile');
-    localStorage.removeItem('zb_user_id');
-    localStorage.removeItem('zb_session_timestamp');
-    addLog('LocalStorage cleared');
+    localStorage.removeItem('zb_auth_profile');
+    clearCache();
+    addLog('LocalStorage and cache cleared');
     window.location.reload();
   };
 
@@ -160,12 +155,12 @@ const ProfileDebugPage = () => {
             </pre>
           </div>
 
-          {/* Manual Profile */}
-          {manualProfile && (
+          {/* Current Profile */}
+          {userProfile && (
             <div className="bg-gray-900 p-6 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">Manual Profile Fetch Result</h2>
+              <h2 className="text-xl font-semibold mb-4">Current Profile Data</h2>
               <pre className="text-sm overflow-auto max-h-96 bg-gray-800 p-4 rounded">
-                {JSON.stringify(manualProfile, null, 2)}
+                {JSON.stringify(userProfile, null, 2)}
               </pre>
             </div>
           )}

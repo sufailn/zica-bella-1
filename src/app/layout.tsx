@@ -6,6 +6,7 @@ import { Poppins } from "next/font/google";
 import { ProductProvider } from "@/context/ProductContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { ProfileProvider } from "@/context/ProfileContext";
 
 const rocaston = localFont({
   src: "../../public/fonts/Rocaston.ttf",
@@ -38,9 +39,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ToastProvider>
-            <ProductProvider>
-              {children}
-            </ProductProvider>
+            <ProfileProvider>
+              <ProductProvider>
+                {children}
+              </ProductProvider>
+            </ProfileProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

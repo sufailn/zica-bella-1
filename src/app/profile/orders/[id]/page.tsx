@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useProducts } from '@/context/ProductContext';
-import { supabase, Order } from '@/lib/supabase';
+import { useProfile } from '@/context/ProfileContext';
+import { Order } from '@/lib/supabase';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
 import ProfileGuard from '@/components/common/ProfileGuard';
@@ -17,6 +18,7 @@ const OrderDetailPage = () => {
   const { userProfile } = useAuth();
   const { showToast } = useToast();
   const { getProductById } = useProducts();
+  const { getOrderById, cancelOrder } = useProfile();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancellingOrder, setCancellingOrder] = useState(false);
@@ -32,27 +34,15 @@ const OrderDetailPage = () => {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (*)
-        `)
-        .eq('id', params.id)
-        .eq('user_id', userProfile.id)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // Order not found or doesn't belong to user
-          showToast('Order not found', 'error');
-          router.push('/profile?tab=orders');
-          return;
-        }
-        throw error;
+      const foundOrder = getOrderById(params.id as string);
+      
+      if (!foundOrder) {
+        showToast('Order not found', 'error');
+        router.push('/profile?tab=orders');
+        return;
       }
       
-      setOrder(data);
+      setOrder(foundOrder as Order);
     } catch (error) {
       console.error('Error loading order:', error);
       showToast('Failed to load order', 'error');
@@ -121,21 +111,9 @@ const OrderDetailPage = () => {
 
     setCancellingOrder(true);
     try {
-      const response = await fetch(`/api/orders/${order.id}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userProfile?.id
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to cancel order');
-      }
+      const { error } = await cancelOrder(order.id);
+      
+      if (error) throw error;
 
       // Update the local order state
       setOrder({ ...order, status: 'cancelled' });

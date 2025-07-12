@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, UserProfile, getUserProfile, signIn, signUp, signOut, clearProfileCache } from '@/lib/supabase';
 
@@ -14,24 +14,24 @@ interface AuthContextType {
   register: (email: string, password: string, metadata?: any) => Promise<{ error?: any }>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
-  refreshProfile: (currentUser?: User | null, skipCache?: boolean) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Simplified storage helpers
-const STORAGE_KEY = 'zb_auth_state';
+// Simple storage helpers
+const STORAGE_KEY = 'zb_auth_profile';
 
-const getStoredAuthState = () => {
+const getStoredProfile = (): UserProfile | null => {
   if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;
     const parsed = JSON.parse(stored);
     
-    // Check if stored data is still valid (24 hours)
+    // Check if stored data is still valid (6 hours)
     const age = Date.now() - parsed.timestamp;
-    if (age > 24 * 60 * 60 * 1000) {
+    if (age > 6 * 60 * 60 * 1000) {
       localStorage.removeItem(STORAGE_KEY);
       return null;
     }
@@ -43,7 +43,7 @@ const getStoredAuthState = () => {
   }
 };
 
-const setStoredAuthState = (profile: UserProfile | null) => {
+const setStoredProfile = (profile: UserProfile | null) => {
   if (typeof window === 'undefined') return;
   try {
     if (profile) {
@@ -55,7 +55,7 @@ const setStoredAuthState = (profile: UserProfile | null) => {
       localStorage.removeItem(STORAGE_KEY);
     }
   } catch (error) {
-    console.warn('Failed to store auth state:', error);
+    console.warn('Failed to store profile:', error);
   }
 };
 
@@ -64,66 +64,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const initializingRef = useRef(false);
+  const initRef = useRef(false);
+  const refreshingRef = useRef(false);
 
   const isAuthenticated = !!user;
   const isAdmin = userProfile?.role === 'admin';
 
-  // Simplified profile refresh
-  const refreshProfile = async (currentUser?: User | null, skipCache = false) => {
-    const userToCheck = currentUser ?? user;
-    if (!userToCheck) {
-      setUserProfile(null);
-      setStoredAuthState(null);
-      return;
-    }
-
+  // Optimized profile refresh
+  const refreshProfile = useCallback(async () => {
+    if (!user || refreshingRef.current) return;
+    
+    refreshingRef.current = true;
     try {
-      const profile = await getUserProfile(userToCheck.id, !skipCache);
+      const profile = await getUserProfile(user.id, false);
       setUserProfile(profile);
-      setStoredAuthState(profile);
+      setStoredProfile(profile);
     } catch (error) {
       console.error('Profile refresh failed:', error);
-      // Try to use stored profile as fallback
-      const stored = getStoredAuthState();
-      if (stored && stored.id === userToCheck.id) {
+      // Use stored profile as fallback
+      const stored = getStoredProfile();
+      if (stored && stored.id === user.id) {
         setUserProfile(stored);
       }
+    } finally {
+      refreshingRef.current = false;
     }
-  };
+  }, [user]);
 
   // Initialize authentication state
   useEffect(() => {
-    if (initializingRef.current) return;
-    initializingRef.current = true;
+    if (initRef.current) return;
+    initRef.current = true;
 
     const initialize = async () => {
       try {
-        // Load stored profile immediately for quick UI feedback
-        const storedProfile = getStoredAuthState();
-        if (storedProfile) {
-          setUserProfile(storedProfile);
-        }
-
         // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Session error:', error);
-          setStoredAuthState(null);
-          setLoading(false);
-          return;
-        }
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
 
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          // Refresh profile in background, but use stored one for immediate display
-          await refreshProfile(session.user, false);
+        if (currentSession?.user) {
+          // Try to use stored profile for immediate display
+          const stored = getStoredProfile();
+          if (stored && stored.id === currentSession.user.id) {
+            setUserProfile(stored);
+          }
+          
+          // Refresh profile in background
+          try {
+            const profile = await getUserProfile(currentSession.user.id, false);
+            setUserProfile(profile);
+            setStoredProfile(profile);
+          } catch (error) {
+            console.error('Profile fetch failed:', error);
+          }
         } else {
           setUserProfile(null);
-          setStoredAuthState(null);
+          setStoredProfile(null);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -135,46 +133,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initialize();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('Auth state change:', event);
       
-      setSession(session);
-      setUser(session?.user ?? null);
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
 
-      switch (event) {
-        case 'SIGNED_OUT':
-          clearProfileCache();
-          setStoredAuthState(null);
-          setUserProfile(null);
-          break;
-          
-        case 'SIGNED_IN':
-          if (session?.user) {
-            await refreshProfile(session.user, true);
-          }
-          break;
-          
-        case 'TOKEN_REFRESHED':
-          // Only refresh profile if user changed
-          if (session?.user && (!userProfile || userProfile.id !== session.user.id)) {
-            await refreshProfile(session.user, false);
-          }
-          break;
-          
-        default:
-          if (session?.user) {
-            await refreshProfile(session.user, false);
-          } else {
-            setUserProfile(null);
-            setStoredAuthState(null);
-          }
+      if (event === 'SIGNED_OUT') {
+        clearProfileCache();
+        setStoredProfile(null);
+        setUserProfile(null);
+      } else if (event === 'SIGNED_IN' && newSession?.user) {
+        // Clear any existing profile data
+        setUserProfile(null);
+        
+        // Load new profile
+        try {
+          const profile = await getUserProfile(newSession.user.id, true);
+          setUserProfile(profile);
+          setStoredProfile(profile);
+        } catch (error) {
+          console.error('Profile load failed on sign in:', error);
+        }
+      } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
+        // Only refresh if we don't have a profile or user changed
+        if (!userProfile || userProfile.id !== newSession.user.id) {
+          await refreshProfile();
+        }
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshProfile, userProfile]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -196,22 +188,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      // Clear all local state first
       setLoading(true);
+      
+      // Clear local state
       clearProfileCache();
-      setStoredAuthState(null);
+      setStoredProfile(null);
       setUserProfile(null);
       
-      // Then sign out from Supabase
+      // Sign out
       await signOut();
       
-      // Force clear all state
+      // Reset state
       setUser(null);
       setSession(null);
-      
-      // Small delay to ensure state is cleared
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -230,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!error) {
         clearProfileCache(user.id);
-        await refreshProfile(user, true);
+        await refreshProfile();
       }
 
       return { error };

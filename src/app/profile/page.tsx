@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { supabase, Order, ShippingAddress } from '@/lib/supabase';
-import { useProfileData } from '@/hooks/useProfileData';
+import { useProfile } from '@/context/ProfileContext';
+import { ShippingAddress } from '@/lib/supabase';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
 import ProfileGuard from '@/components/common/ProfileGuard';
@@ -18,9 +18,8 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses'>('profile');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(null);
-  const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
   
-  // Use the optimized profile data hook
+  // Use the unified profile context
   const {
     orders,
     ordersCount,
@@ -35,8 +34,11 @@ const ProfilePage = () => {
     isLoadingAddresses,
     loadAddresses,
     refreshAddresses,
-    clearCache,
-  } = useProfileData();
+    createAddress,
+    updateAddress,
+    deleteAddress,
+    cancelOrder,
+  } = useProfile();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -104,22 +106,12 @@ const ProfilePage = () => {
     try {
       if (editingAddress) {
         // Update existing address
-        const { error } = await supabase
-          .from('shipping_addresses')
-          .update(addressForm)
-          .eq('id', editingAddress.id);
-
+        const { error } = await updateAddress(editingAddress.id, addressForm);
         if (error) throw error;
         showToast('Address updated successfully', 'success');
       } else {
         // Create new address
-        const { error } = await supabase
-          .from('shipping_addresses')
-          .insert([{
-            ...addressForm,
-            user_id: userProfile?.id,
-          }]);
-
+        const { error } = await createAddress(addressForm);
         if (error) throw error;
         showToast('Address added successfully', 'success');
       }
@@ -127,7 +119,6 @@ const ProfilePage = () => {
       setShowAddressForm(false);
       setEditingAddress(null);
       resetAddressForm();
-      await refreshAddresses();
     } catch (error) {
       console.error('Error saving address:', error);
       showToast('Failed to save address', 'error');
@@ -138,14 +129,9 @@ const ProfilePage = () => {
     if (!confirm('Are you sure you want to delete this address?')) return;
 
     try {
-      const { error } = await supabase
-        .from('shipping_addresses')
-        .delete()
-        .eq('id', addressId);
-
+      const { error } = await deleteAddress(addressId);
       if (error) throw error;
       showToast('Address deleted successfully', 'success');
-      await refreshAddresses();
     } catch (error) {
       console.error('Error deleting address:', error);
       showToast('Failed to delete address', 'error');
@@ -191,33 +177,13 @@ const ProfilePage = () => {
       return;
     }
 
-    setCancellingOrder(orderId);
     try {
-      const response = await fetch(`/api/orders/${orderId}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userProfile?.id
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to cancel order');
-      }
-
-      // Refresh orders to get updated status
-      await refreshOrders();
-
+      const { error } = await cancelOrder(orderId);
+      if (error) throw error;
       showToast('Order cancelled successfully', 'success');
     } catch (error) {
       console.error('Error cancelling order:', error);
       showToast(error instanceof Error ? error.message : 'Failed to cancel order', 'error');
-    } finally {
-      setCancellingOrder(null);
     }
   };
 
@@ -467,12 +433,8 @@ const ProfilePage = () => {
                             {order.status === 'pending' || order.status === 'confirmed' ? (
                               <button 
                                 onClick={() => handleCancelOrder(order.id)}
-                                disabled={cancellingOrder === order.id}
-                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition font-medium text-sm"
                               >
-                                {cancellingOrder === order.id && (
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                                )}
                                 Cancel Order
                               </button>
                             ) : order.status === 'processing' ? (

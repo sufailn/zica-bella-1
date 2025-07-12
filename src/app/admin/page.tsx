@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { supabase, Order, UserProfile } from '@/lib/supabase';
+import { Order, UserProfile } from '@/lib/supabase';
 
 // Extended interface for orders with joined user data
 interface OrderWithUser extends Order {
