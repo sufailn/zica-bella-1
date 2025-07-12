@@ -4,7 +4,6 @@ import Navbar from "@/components/common/Navbar";
 import Featured from "@/components/Home/Featured";
 import Hero from "@/components/Home/Hero";
 import ProductsSection from "@/components/Home/ProductSection";
-import ParallaxSection from "@/components/Home/ParallaxSection";
 import SlidingProducts from "@/components/Home/SlidingProducts";
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -66,7 +65,6 @@ export default function Home() {
       <div className="font-literata text-2xl ">
         <Hero />
         <ProductsSection />
-        <ParallaxSection />
         <SlidingProducts />
         
         {/* <Featured /> */}

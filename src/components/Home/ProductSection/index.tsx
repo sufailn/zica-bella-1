@@ -6,6 +6,7 @@ import { useProducts } from "@/context/ProductContext";
 const CategoryTabs = lazy(() => import("./CategoryTabs"));
 const ProductCard = lazy(() => import("./ProductCard"));
 const ProductTitle = lazy(() => import("./ProductTitle"));
+const ParallaxSection = lazy(() => import("../ParallaxSection"));
 
 // Loading fallback components
 const LoadingSkeleton = () => (
@@ -69,6 +70,12 @@ const ProductsSection = () => {
   const { getProductsByCategory } = useProducts();
   const filteredProducts = getProductsByCategory(activeCategory);
 
+  // Divide products into groups of 4
+  const productGroups = [];
+  for (let i = 0; i < filteredProducts.length; i += 4) {
+    productGroups.push(filteredProducts.slice(i, i + 4));
+  }
+
   return (
     <div className="pt-8 px-0 text-white bg-black">
       {/* Title and Tabs */}
@@ -80,21 +87,36 @@ const ProductsSection = () => {
         <CategoryTabs onCategoryChange={setActiveCategory} />
       </Suspense>
 
-      {/* Products Grid */}
-      <div className="mt-8 grid grid-cols-2 gap-x-0 lg:grid-cols-4">
-        {filteredProducts.map((product, index) => {
-          const isNotLastColumn =
-            (index + 1) % 2 !== 0 && index !== filteredProducts.length - 1;
-          return (
-            <LazyProductCard
-              key={product.id}
-              product={product}
-              isNotLastColumn={isNotLastColumn}
-              index={index}
-            />
-          );
-        })}
-      </div>
+      {/* Products Groups with Parallax Dividers */}
+      {productGroups.map((group, groupIndex) => (
+        <div key={groupIndex}>
+          {/* Products Grid Group */}
+          <div className="mt-8 grid grid-cols-2 gap-x-0 lg:grid-cols-4">
+            {group.map((product, index) => {
+              const globalIndex = groupIndex * 4 + index;
+              const isNotLastColumn =
+                (index + 1) % 2 !== 0 && index !== group.length - 1;
+              return (
+                <LazyProductCard
+                  key={product.id}
+                  product={product}
+                  isNotLastColumn={isNotLastColumn}
+                  index={globalIndex}
+                />
+              );
+            })}
+          </div>
+
+          {/* Parallax Divider (except after the last group) */}
+          {groupIndex < productGroups.length - 1 && (
+            <div className="my-16">
+              <Suspense fallback={<div className="h-96 bg-gray-900 animate-pulse" />}>
+                <ParallaxSection />
+              </Suspense>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
