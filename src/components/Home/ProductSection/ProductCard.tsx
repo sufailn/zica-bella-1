@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, memo, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
@@ -33,7 +33,7 @@ const ProductCard = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation to product page
     e.stopPropagation();
     
@@ -56,11 +56,15 @@ const ProductCard = ({
     setTimeout(() => {
       button.innerHTML = originalText;
     }, 1000);
-  };
+  }, [addToCart, getProductById, product.id]);
 
-  const handleModalAddToCart = (color?: string, size?: string, quantity?: number) => {
+  const handleModalAddToCart = useCallback((color?: string, size?: string, quantity?: number) => {
     addToCart(product.id, quantity || 1, color, size);
-  };
+  }, [addToCart, product.id]);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
 
   // IntersectionObserver for lazy rendering
   useEffect(() => {
@@ -96,6 +100,30 @@ const ProductCard = ({
     preload();
   }, [shouldRender, product.images]);
 
+  // Memoize Swiper configuration to prevent recreation on every render
+  const swiperConfig = useMemo(() => ({
+    spaceBetween: 0,
+    slidesPerView: 1,
+    className: "h-full product-swiper",
+    modules: [Pagination],
+    loop: product.images.length > 1,
+    pagination: product.images.length > 1 ? {
+      clickable: true,
+      dynamicBullets: false,
+      // Use a stable CSS selector instead of renderBullet function
+      bulletClass: `swiper-pagination-bullet-${product.id}`,
+      bulletActiveClass: `swiper-pagination-bullet-active-${product.id}`,
+    } : false,
+    // Disable auto-updates to prevent infinite loops
+    observer: false,
+    observeParents: false,
+    observeSlideChildren: false,
+    watchOverflow: true,
+    // Prevent unnecessary updates
+    updateOnWindowResize: false,
+    preventInteractionOnTransition: true,
+  }), [product.id, product.images.length]);
+
   if (!shouldRender) return <div ref={containerRef} className="h-80" />;
 
   return (
@@ -108,47 +136,33 @@ const ProductCard = ({
           }}
           ref={containerRef}
         >
-         <div className="relative h-80 aspect-[3/4] w-full overflow-hidden bg-gray-900">
-    {!imagesLoaded ? (
-      <div className="absolute inset-0 overflow-hidden">
-        <img
-          src={product.images[0]}
-          alt={product.name}
-          className="h-full w-full object-cover object-center"
-          loading="lazy"
-        />
-        {inView && (
-          <div className="absolute inset-0 bg-transparent animate-intentionalZoom z-10 pointer-events-none" />
-        )}
-      </div>
-    ) : (
-      <Swiper
-        spaceBetween={0}
-        slidesPerView={1}
-        className="h-full"
-        modules={[Pagination]}
-        loop={true}
-        pagination={{
-          clickable: true,
-          el: undefined,
-          bulletClass: "swiper-pagination-bullet",
-          bulletActiveClass: "swiper-pagination-bullet-active",
-          renderBullet: (index, className) =>
-            `<span class='${className}'></span>`,
-        }}
-      >
-        {product.images.map((img, idx) => (
-          <SwiperSlide key={idx}>
-            <img
-              src={img}
-              alt={product.name}
-              className="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-300"
-              loading="lazy"
-            />
-          </SwiperSlide>
-        ))}
-      </Swiper>
-    )}
+          <div className="relative h-80 aspect-[3/4] w-full overflow-hidden bg-gray-900">
+            {!imagesLoaded ? (
+              <div className="absolute inset-0 overflow-hidden">
+                <img
+                  src={product.images[0]}
+                  alt={product.name}
+                  className="h-full w-full object-cover object-center"
+                  loading="lazy"
+                />
+                {inView && (
+                  <div className="absolute inset-0 bg-transparent animate-intentionalZoom z-10 pointer-events-none" />
+                )}
+              </div>
+            ) : (
+              <Swiper {...swiperConfig}>
+                {product.images.map((img, idx) => (
+                  <SwiperSlide key={`${product.id}-slide-${idx}`}>
+                    <img
+                      src={img}
+                      alt={`${product.name} - Image ${idx + 1}`}
+                      className="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-300"
+                      loading="lazy"
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            )}
 
             {/* Sold Out Badge */}
             {product.soldOut && (
@@ -157,30 +171,30 @@ const ProductCard = ({
               </div>
             )}
 
-                        {/* Add to Cart Button */}
-              <button 
-                onClick={handleAddToCart}
-                disabled={product.soldOut}
-                className={`absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-colors duration-200 z-20 ${
-                  product.soldOut 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-white hover:bg-gray-50 hover:scale-110'
-                }`}
+            {/* Add to Cart Button */}
+            <button 
+              onClick={handleAddToCart}
+              disabled={product.soldOut}
+              className={`absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-colors duration-200 z-20 ${
+                product.soldOut 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-white hover:bg-gray-50 hover:scale-110'
+              }`}
+            >
+              <svg
+                className="h-4 w-4 text-black"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="h-4 w-4 text-black"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+            </button>
 
             <style jsx global>{`
               @keyframes zoom {
@@ -196,28 +210,29 @@ const ProductCard = ({
                 animation: zoom 1s ease-out forwards;
               }
 
-              .swiper-pagination {
-                position: absolute;
+              .product-swiper .swiper-pagination {
+                position: absolute !important;
                 bottom: 0 !important;
-                left: 0;
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                z-index: 10;
+                left: 0 !important;
+                width: 100% !important;
+                display: flex !important;
+                justify-content: center !important;
+                z-index: 10 !important;
+                height: 4px !important;
               }
 
-              .swiper-pagination-bullet {
-                flex: 1;
-                height: 4px;
-                margin: 0 0px !important;
-                background: #e5e7eb;
-                border-radius: 0px;
-                opacity: 1;
-                transition: background 0.3s;
+              .swiper-pagination-bullet-${product.id} {
+                flex: 1 !important;
+                height: 4px !important;
+                margin: 0 !important;
+                background: #e5e7eb !important;
+                border-radius: 0 !important;
+                opacity: 1 !important;
+                transition: background 0.3s !important;
               }
 
-              .swiper-pagination-bullet-active {
-                background: #111;
+              .swiper-pagination-bullet-active-${product.id} {
+                background: #111 !important;
               }
             `}</style>
           </div>
@@ -234,10 +249,10 @@ const ProductCard = ({
         </div>
       </Link>
       
-      {/* Product Selection Modal - Outside Link */}
+      {/* Product Selection Modal */}
       <ProductSelectionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
         product={getProductById(product.id) || null}
         onAddToCart={handleModalAddToCart}
       />
@@ -245,4 +260,4 @@ const ProductCard = ({
   );
 };
 
-export default ProductCard;
+export default memo(ProductCard);

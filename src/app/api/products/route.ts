@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// GET /api/products - Get all products
+// Cache for product data
+const cache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Helper function to check cache validity
+const isCacheValid = (timestamp: number) => {
+  return Date.now() - timestamp < CACHE_DURATION;
+};
+
+// Helper function to get cache key
+const getCacheKey = (params: URLSearchParams) => {
+  return `products_${params.toString()}`;
+};
+
+// GET /api/products - Get all products with caching and optimization
 export async function GET(request: NextRequest) {
   try {
     if (!supabaseAdmin) {
@@ -15,60 +29,125 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const featured = searchParams.get('featured')
     const active = searchParams.get('active') !== 'false' // Default to true
+    const page = parseInt(searchParams.get('page') || '0')
+    const limit = parseInt(searchParams.get('limit') || '0')
+    const includeRelations = searchParams.get('include_relations') !== 'false' // Default to true
+
+    // Check cache first
+    const cacheKey = getCacheKey(searchParams);
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData && isCacheValid(cachedData.timestamp)) {
+      return NextResponse.json(cachedData.data, {
+        headers: {
+          'Cache-Control': 'public, max-age=300', // 5 minutes
+        }
+      });
+    }
+
+    // Build the query with optimizations
+    const selectClause = includeRelations ? `
+      *,
+      product_colors:product_colors(
+        id,
+        color_id,
+        available,
+        colors:color_id(
+          id,
+          name,
+          value
+        )
+      ),
+      product_sizes:product_sizes(
+        id,
+        size_id,
+        available,
+        sizes:size_id(
+          id,
+          name,
+          display_order
+        )
+      )
+    ` : `
+      id,
+      name,
+      price,
+      images,
+      category,
+      stock_quantity,
+      is_featured,
+      is_active,
+      created_at,
+      updated_at
+    `;
 
     let query = supabaseAdmin
       .from('products')
-      .select(`
-        *,
-        product_colors:product_colors(
-          id,
-          color_id,
-          available,
-          colors:color_id(
-            id,
-            name,
-            value
-          )
-        ),
-        product_sizes:product_sizes(
-          id,
-          size_id,
-          available,
-          sizes:size_id(
-            id,
-            name,
-            display_order
-          )
-        )
-      `)
+      .select(selectClause)
       .eq('is_active', active)
-      .order('created_at', { ascending: false })
-
+      .order('created_at', { ascending: false });
+    
     if (category) {
-      query = query.eq('category', category)
+      query = query.eq('category', category);
     }
 
     if (featured === 'true') {
-      query = query.eq('is_featured', true)
+      query = query.eq('is_featured', true);
     }
 
-    const { data: products, error } = await query
+    // Apply pagination if specified
+    if (limit > 0) {
+      const offset = page * limit;
+      query = query.range(offset, offset + limit - 1);
+    }
+
+    const { data: products, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching products:', error)
+      console.error('Error fetching products:', error);
       return NextResponse.json(
         { error: 'Failed to fetch products' },
         { status: 500 }
-      )
+      );
     }
 
-    return NextResponse.json({ products })
+    // Prepare response
+    const response = {
+      products: products || [],
+      totalCount: count,
+      page,
+      limit,
+      hasMore: limit > 0 ? (products?.length === limit) : false,
+    };
+
+    // Cache the response
+    cache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now(),
+    });
+
+    // Clean up old cache entries periodically
+    if (cache.size > 100) {
+      const now = Date.now();
+      for (const [key, value] of cache.entries()) {
+        if (!isCacheValid(value.timestamp)) {
+          cache.delete(key);
+        }
+      }
+    }
+
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'public, max-age=300', // 5 minutes
+      }
+    });
+
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -171,7 +250,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Insert product-size relationships and get size data for legacy column
+    // Insert product-size relationships
     if (selectedSizes && selectedSizes.length > 0) {
       const sizeInserts = selectedSizes.map((sizeId: number) => ({
         product_id: product.id,
@@ -187,6 +266,9 @@ export async function POST(request: NextRequest) {
         console.error('Error inserting product sizes:', sizeError)
       }
     }
+
+    // Clear cache after product creation
+    cache.clear();
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (error) {

@@ -4,23 +4,39 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { supabase, Order, ShippingAddress } from '@/lib/supabase';
+import { useProfileData } from '@/hooks/useProfileData';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
 import ProfileGuard from '@/components/common/ProfileGuard';
 import { IoPersonOutline, IoLocationOutline, IoReceiptOutline, IoAdd, IoPencil, IoTrash } from 'react-icons/io5';
 import { motion } from 'framer-motion';
+import { OrdersListSkeleton, ProfileFormSkeleton } from '@/components/common/LoadingSkeleton';
 
 const ProfilePage = () => {
   const { userProfile, updateProfile, loading } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses'>('profile');
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(null);
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
+  
+  // Use the optimized profile data hook
+  const {
+    orders,
+    ordersCount,
+    hasMoreOrders,
+    isLoadingOrders,
+    isLoadingMoreOrders,
+    loadOrders,
+    loadMoreOrders,
+    refreshOrders,
+    addresses,
+    addressesCount,
+    isLoadingAddresses,
+    loadAddresses,
+    refreshAddresses,
+    clearCache,
+  } = useProfileData();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -57,57 +73,12 @@ const ProfilePage = () => {
 
   // Load orders and addresses when tab changes
   useEffect(() => {
-    if (activeTab === 'orders') {
+    if (activeTab === 'orders' && orders.length === 0) {
       loadOrders();
-    } else if (activeTab === 'addresses') {
+    } else if (activeTab === 'addresses' && addresses.length === 0) {
       loadAddresses();
     }
-  }, [activeTab]);
-
-  const loadOrders = async () => {
-    if (!userProfile) return;
-    
-    setIsLoadingOrders(true);
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (*)
-        `)
-        .eq('user_id', userProfile.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Error loading orders:', error);
-      showToast('Failed to load orders', 'error');
-    } finally {
-      setIsLoadingOrders(false);
-    }
-  };
-
-  const loadAddresses = async () => {
-    if (!userProfile) return;
-    
-    setIsLoadingAddresses(true);
-    try {
-      const { data, error } = await supabase
-        .from('shipping_addresses')
-        .select('*')
-        .eq('user_id', userProfile.id)
-        .order('is_default', { ascending: false });
-
-      if (error) throw error;
-      setAddresses(data || []);
-    } catch (error) {
-      console.error('Error loading addresses:', error);
-      showToast('Failed to load addresses', 'error');
-    } finally {
-      setIsLoadingAddresses(false);
-    }
-  };
+  }, [activeTab, orders.length, addresses.length, loadOrders, loadAddresses]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,7 +127,7 @@ const ProfilePage = () => {
       setShowAddressForm(false);
       setEditingAddress(null);
       resetAddressForm();
-      loadAddresses();
+      await refreshAddresses();
     } catch (error) {
       console.error('Error saving address:', error);
       showToast('Failed to save address', 'error');
@@ -174,7 +145,7 @@ const ProfilePage = () => {
 
       if (error) throw error;
       showToast('Address deleted successfully', 'success');
-      loadAddresses();
+      await refreshAddresses();
     } catch (error) {
       console.error('Error deleting address:', error);
       showToast('Failed to delete address', 'error');
@@ -238,12 +209,8 @@ const ProfilePage = () => {
         throw new Error(data.error || 'Failed to cancel order');
       }
 
-      // Update the order in local state
-      setOrders(orders.map(order => 
-        order.id === orderId 
-          ? { ...order, status: 'cancelled' }
-          : order
-      ));
+      // Refresh orders to get updated status
+      await refreshOrders();
 
       showToast('Order cancelled successfully', 'success');
     } catch (error) {
@@ -346,9 +313,12 @@ const ProfilePage = () => {
           >
             {activeTab === 'profile' && (
               <div className="max-w-2xl">
-                <div className="bg-gray-900 p-6 rounded-lg">
-                  <h2 className="text-xl font-semibold mb-6">Profile Information</h2>
-                  <form onSubmit={handleProfileUpdate} className="space-y-4">
+                {loading ? (
+                  <ProfileFormSkeleton />
+                ) : (
+                  <div className="bg-gray-900 p-6 rounded-lg">
+                    <h2 className="text-xl font-semibold mb-6">Profile Information</h2>
+                    <form onSubmit={handleProfileUpdate} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">First Name</label>
@@ -400,7 +370,8 @@ const ProfilePage = () => {
                       Update Profile
                     </button>
                   </form>
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -408,9 +379,7 @@ const ProfilePage = () => {
               <div>
                 <h2 className="text-xl font-semibold mb-6">Order History</h2>
                 {isLoadingOrders ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                  </div>
+                  <OrdersListSkeleton />
                 ) : orders.length === 0 ? (
                   <div className="text-center py-12">
                     <IoReceiptOutline size={64} className="mx-auto text-gray-600 mb-4" />
@@ -519,6 +488,22 @@ const ProfilePage = () => {
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Load More Button */}
+                    {hasMoreOrders && (
+                      <div className="flex justify-center mt-6">
+                        <button
+                          onClick={loadMoreOrders}
+                          disabled={isLoadingMoreOrders}
+                          className="bg-white text-black px-6 py-2 rounded-md hover:bg-gray-200 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {isLoadingMoreOrders && (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                          )}
+                          Load More Orders
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

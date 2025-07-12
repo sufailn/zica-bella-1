@@ -19,52 +19,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Local storage keys for persistence
-const STORAGE_KEYS = {
-  USER_PROFILE: 'zb_user_profile',
-  USER_ID: 'zb_user_id',
-  SESSION_TIMESTAMP: 'zb_session_timestamp',
-} as const;
+// Simplified storage helpers
+const STORAGE_KEY = 'zb_auth_state';
 
-// Helper functions for local storage
-const getStoredProfile = (): UserProfile | null => {
+const getStoredAuthState = () => {
   if (typeof window === 'undefined') return null;
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
-    return stored ? JSON.parse(stored) : null;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    
+    // Check if stored data is still valid (24 hours)
+    const age = Date.now() - parsed.timestamp;
+    if (age > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    
+    return parsed.profile;
   } catch {
+    localStorage.removeItem(STORAGE_KEY);
     return null;
   }
 };
 
-const setStoredProfile = (profile: UserProfile | null) => {
+const setStoredAuthState = (profile: UserProfile | null) => {
   if (typeof window === 'undefined') return;
   try {
     if (profile) {
-      localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
-      localStorage.setItem(STORAGE_KEYS.USER_ID, profile.id);
-      localStorage.setItem(STORAGE_KEYS.SESSION_TIMESTAMP, Date.now().toString());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        profile,
+        timestamp: Date.now()
+      }));
     } else {
-      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
-      localStorage.removeItem(STORAGE_KEYS.USER_ID);
-      localStorage.removeItem(STORAGE_KEYS.SESSION_TIMESTAMP);
+      localStorage.removeItem(STORAGE_KEY);
     }
   } catch (error) {
-    console.warn('Failed to update localStorage:', error);
-  }
-};
-
-const isStoredProfileValid = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  try {
-    const timestamp = localStorage.getItem(STORAGE_KEYS.SESSION_TIMESTAMP);
-    if (!timestamp) return false;
-    
-    const age = Date.now() - parseInt(timestamp);
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    return age < maxAge;
-  } catch {
-    return false;
+    console.warn('Failed to store auth state:', error);
   }
 };
 
@@ -73,324 +64,158 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const retryCountRef = useRef(0);
-  const maxRetries = 3;
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const MAX_LOADING_TIME = 15000; // 15 seconds maximum loading time
+  const initializingRef = useRef(false);
 
   const isAuthenticated = !!user;
   const isAdmin = userProfile?.role === 'admin';
 
-  // Force stop loading after maximum time
-  const forceStopLoading = () => {
-    console.warn('Forcing stop loading after timeout');
-    setLoading(false);
-    
-    // If we have stored profile data, try to use it
-    if (isStoredProfileValid()) {
-      const storedProfile = getStoredProfile();
-      if (storedProfile) {
-        console.log('Using stored profile as fallback after timeout');
-        setUserProfile(storedProfile);
-      }
-    }
-  };
-
-  // Start loading timeout
-  const startLoadingTimeout = () => {
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
-    
-    loadingTimeoutRef.current = setTimeout(forceStopLoading, MAX_LOADING_TIME);
-  };
-
-  // Clear loading timeout
-  const clearLoadingTimeout = () => {
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-      loadingTimeoutRef.current = null;
-    }
-  };
-
-  // Retry mechanism for profile fetching
-  const fetchProfileWithRetry = async (userId: string, skipCache = false, retryCount = 0): Promise<UserProfile | null> => {
-    try {
-      const profile = await getUserProfile(userId, !skipCache);
-      if (profile) {
-        setStoredProfile(profile); // Store in localStorage
-        return profile;
-      }
-      
-      // If profile is null and we have retries left, try again
-      if (retryCount < maxRetries) {
-        console.log(`Profile fetch attempt ${retryCount + 1} returned null, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
-        return await fetchProfileWithRetry(userId, true, retryCount + 1); // Skip cache on retry
-      }
-      
-      console.warn(`Profile fetch failed after ${maxRetries + 1} attempts`);
-      return null;
-    } catch (error) {
-      console.error(`Profile fetch attempt ${retryCount + 1} failed:`, error);
-      
-      if (retryCount < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-        return await fetchProfileWithRetry(userId, true, retryCount + 1);
-      }
-      
-      return null;
-    }
-  };
-
-  // Enhanced profile refresh with retry logic
+  // Simplified profile refresh
   const refreshProfile = async (currentUser?: User | null, skipCache = false) => {
     const userToCheck = currentUser ?? user;
     if (!userToCheck) {
       setUserProfile(null);
-      setStoredProfile(null);
+      setStoredAuthState(null);
       return;
     }
 
-    console.log(`Refreshing profile for user ${userToCheck.id}, skipCache: ${skipCache}`);
-
-    // Use stored profile immediately if valid and not skipping cache
-    if (!skipCache && isStoredProfileValid()) {
-      const storedProfile = getStoredProfile();
-      if (storedProfile && storedProfile.id === userToCheck.id) {
-        console.log('Using stored profile for immediate display');
-        setUserProfile(storedProfile);
-        
-        // Still fetch fresh data in background
-        fetchProfileWithRetry(userToCheck.id, true).then(freshProfile => {
-          if (freshProfile && JSON.stringify(freshProfile) !== JSON.stringify(storedProfile)) {
-            console.log('Updated profile with fresh data');
-            setUserProfile(freshProfile);
-          }
-        }).catch(error => {
-          console.warn('Background profile refresh failed:', error);
-        });
-        return;
-      }
-    }
-
-    // Fetch fresh profile
     try {
-      const profile = await fetchProfileWithRetry(userToCheck.id, skipCache);
+      const profile = await getUserProfile(userToCheck.id, !skipCache);
       setUserProfile(profile);
-      
-      if (!profile) {
-        console.error('Failed to fetch profile after all retries');
-        // Try to use stored profile as last resort
-        if (isStoredProfileValid()) {
-          const fallbackProfile = getStoredProfile();
-          if (fallbackProfile && fallbackProfile.id === userToCheck.id) {
-            console.log('Using stored profile as final fallback');
-            setUserProfile(fallbackProfile);
-          }
-        }
-      }
+      setStoredAuthState(profile);
     } catch (error) {
       console.error('Profile refresh failed:', error);
+      // Try to use stored profile as fallback
+      const stored = getStoredAuthState();
+      if (stored && stored.id === userToCheck.id) {
+        setUserProfile(stored);
+      }
     }
   };
 
-  // Enhanced session initialization with retry
-  const initializeSession = async (retryCount = 0): Promise<void> => {
-    try {
-      console.log(`Initializing session, attempt ${retryCount + 1}`);
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Session fetch error:', error);
-        
-        if (retryCount < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-          return await initializeSession(retryCount + 1);
-        }
-        
-        // If all retries failed, check if we have a stored profile to fall back to
-        console.log('Session initialization failed, checking for stored profile...');
-        if (isStoredProfileValid()) {
-          const storedProfile = getStoredProfile();
-          if (storedProfile) {
-            setUserProfile(storedProfile);
-            console.log('Using stored profile as fallback after session failure');
-          }
-        }
-        
-        clearLoadingTimeout();
-        setLoading(false);
-        return;
-      }
+  // Initialize authentication state
+  useEffect(() => {
+    if (initializingRef.current) return;
+    initializingRef.current = true;
 
-      console.log('Session initialized successfully:', !!session);
+    const initialize = async () => {
+      try {
+        // Load stored profile immediately for quick UI feedback
+        const storedProfile = getStoredAuthState();
+        if (storedProfile) {
+          setUserProfile(storedProfile);
+        }
+
+        // Get current session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          setStoredAuthState(null);
+          setLoading(false);
+          return;
+        }
+
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          // Refresh profile in background, but use stored one for immediate display
+          await refreshProfile(session.user, false);
+        } else {
+          setUserProfile(null);
+          setStoredAuthState(null);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initialize();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event);
+      
       setSession(session);
       setUser(session?.user ?? null);
 
-      if (session?.user) {
-        await refreshProfile(session.user, false);
-      } else {
-        // No session, clear stored data
-        setUserProfile(null);
-        setStoredProfile(null);
-      }
-
-      clearLoadingTimeout();
-      setLoading(false);
-    } catch (error) {
-      console.error('Session initialization error:', error);
-      
-      if (retryCount < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-        return await initializeSession(retryCount + 1);
-      }
-      
-      clearLoadingTimeout();
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    let mounted = true;
-    retryCountRef.current = 0;
-
-    // Start the loading timeout
-    startLoadingTimeout();
-
-    // Initialize with stored profile for immediate UI feedback
-    if (isStoredProfileValid()) {
-      const storedProfile = getStoredProfile();
-      if (storedProfile) {
-        setUserProfile(storedProfile);
-        console.log('Initialized with stored profile');
-      }
-    }
-
-    // Initialize session
-    initializeSession();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-      
-      console.log('Auth state change:', event);
-      
-      // Clear any existing timeout when auth state changes
-      clearLoadingTimeout();
-      
-      // Handle different auth events
       switch (event) {
         case 'SIGNED_OUT':
           clearProfileCache();
-          setStoredProfile(null);
-          setSession(null);
-          setUser(null);
+          setStoredAuthState(null);
           setUserProfile(null);
-          setLoading(false);
           break;
           
         case 'SIGNED_IN':
-          setLoading(true);
-          startLoadingTimeout();
-          setSession(session);
-          setUser(session?.user ?? null);
           if (session?.user) {
-            await refreshProfile(session.user, true); // Skip cache for fresh login
+            await refreshProfile(session.user, true);
           }
-          setLoading(false);
-          clearLoadingTimeout();
           break;
           
         case 'TOKEN_REFRESHED':
-          setSession(session);
-          setUser(session?.user ?? null);
-          // Don't clear cache on token refresh, just update if needed
+          // Only refresh profile if user changed
           if (session?.user && (!userProfile || userProfile.id !== session.user.id)) {
-            setLoading(true);
-            startLoadingTimeout();
             await refreshProfile(session.user, false);
-            setLoading(false);
-            clearLoadingTimeout();
           }
-          break;
-          
-        case 'USER_UPDATED':
-          setLoading(true);
-          startLoadingTimeout();
-          setSession(session);
-          setUser(session?.user ?? null);
-          if (session?.user) {
-            await refreshProfile(session.user, true); // Get fresh data on user update
-          }
-          setLoading(false);
-          clearLoadingTimeout();
           break;
           
         default:
-          setSession(session);
-          setUser(session?.user ?? null);
           if (session?.user) {
-            setLoading(true);
-            startLoadingTimeout();
             await refreshProfile(session.user, false);
-            setLoading(false);
-            clearLoadingTimeout();
           } else {
             setUserProfile(null);
-            setStoredProfile(null);
-            setLoading(false);
+            setStoredAuthState(null);
           }
       }
     });
 
     return () => {
-      mounted = false;
-      clearLoadingTimeout();
       subscription.unsubscribe();
     };
   }, []);
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
-    startLoadingTimeout();
     try {
-      const { data, error } = await signIn(email, password);
+      const { error } = await signIn(email, password);
       return { error };
     } catch (error) {
       return { error };
-    } finally {
-      // Don't set loading to false here, let the auth state change handle it
     }
   };
 
   const register = async (email: string, password: string, metadata?: any) => {
-    setLoading(true);
-    startLoadingTimeout();
     try {
-      const { data, error } = await signUp(email, password, metadata);
+      const { error } = await signUp(email, password, metadata);
       return { error };
     } catch (error) {
       return { error };
-    } finally {
-      // Don't set loading to false here, let the auth state change handle it
     }
   };
 
   const logout = async () => {
-    setLoading(true);
     try {
+      // Clear all local state first
+      setLoading(true);
       clearProfileCache();
-      setStoredProfile(null);
-      await signOut();
-      setUser(null);
+      setStoredAuthState(null);
       setUserProfile(null);
+      
+      // Then sign out from Supabase
+      await signOut();
+      
+      // Force clear all state
+      setUser(null);
       setSession(null);
+      
+      // Small delay to ensure state is cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (error) {
+      console.error('Logout error:', error);
     } finally {
       setLoading(false);
-      clearLoadingTimeout();
     }
   };
 
@@ -404,7 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', user.id);
 
       if (!error) {
-        // Clear cache and refresh profile after update
         clearProfileCache(user.id);
         await refreshProfile(user, true);
       }

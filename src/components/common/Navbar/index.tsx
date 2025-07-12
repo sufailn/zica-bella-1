@@ -4,7 +4,7 @@ import { IoCartOutline, IoPersonOutline } from "react-icons/io5";
 import Sidebar from "../Sidebar";
 import CartSidebar from "../CartSidebar";
 import AuthModal from "../AuthModal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useProducts } from "@/context/ProductContext";
 import { useAuth } from "@/context/AuthContext";
@@ -18,17 +18,18 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  useEffect(() => {
-    if(isHome){
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      setIsScrolled(scrollTop > 100); // Change background after scrolling 100px
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }
+  // Memoize the scroll handler to prevent infinite loops
+  const handleScroll = useCallback(() => {
+    const scrollTop = window.scrollY;
+    setIsScrolled(scrollTop > 100);
   }, []);
+
+  useEffect(() => {
+    if (isHome) {
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, [isHome]);
 
   return (
     <nav

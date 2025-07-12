@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// Cache for orders data
+const cache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (shorter for orders as they update more frequently)
+
+// Helper function to check cache validity
+const isCacheValid = (timestamp: number) => {
+  return Date.now() - timestamp < CACHE_DURATION;
+};
+
+// Helper function to get cache key
+const getCacheKey = (params: URLSearchParams) => {
+  return `orders_${params.toString()}`;
+};
+
 // POST /api/orders - Create a new order
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +37,7 @@ export async function POST(request: NextRequest) {
       total_amount 
     } = body
 
-    // Validate required fields
+    // Validation
     if (!user_id || !cart_items || !customer_info || !shipping_info || !payment_info) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -105,6 +119,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Clear cache for this user after order creation
+    const keysToDelete = [];
+    for (const key of cache.keys()) {
+      if (key.includes(user_id)) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => cache.delete(key));
+
     return NextResponse.json({ 
       order: {
         ...order,
@@ -121,7 +144,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/orders - Get orders for a user (requires authentication)
+// GET /api/orders - Get orders for a user with pagination and caching
 export async function GET(request: NextRequest) {
   try {
     if (!supabaseAdmin) {
@@ -133,6 +156,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const user_id = searchParams.get('user_id')
+    const page = parseInt(searchParams.get('page') || '0')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const includeItems = searchParams.get('include_items') !== 'false' // Default to true
 
     if (!user_id) {
       return NextResponse.json(
@@ -141,14 +167,59 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check cache first
+    const cacheKey = getCacheKey(searchParams);
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData && isCacheValid(cachedData.timestamp)) {
+      return NextResponse.json(cachedData.data, {
+        headers: {
+          'Cache-Control': 'public, max-age=120', // 2 minutes
+        }
+      });
+    }
+
+    // Get total count for pagination
+    const { count: totalCount } = await supabaseAdmin
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user_id);
+
+    // Build optimized query
+    const selectClause = includeItems ? `
+      id,
+      order_number,
+      status,
+      total_amount,
+      payment_method,
+      payment_status,
+      created_at,
+      order_items (
+        id,
+        product_name,
+        product_price,
+        quantity,
+        selected_color,
+        selected_size,
+        item_total
+      )
+    ` : `
+      id,
+      order_number,
+      status,
+      total_amount,
+      payment_method,
+      payment_status,
+      created_at
+    `;
+
+    const offset = page * limit;
     const { data: orders, error } = await supabaseAdmin
       .from('orders')
-      .select(`
-        *,
-        order_items (*)
-      `)
+      .select(selectClause)
       .eq('user_id', user_id)
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching orders:', error)
@@ -158,7 +229,37 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ orders })
+    // Prepare response
+    const response = {
+      orders: orders || [],
+      totalCount: totalCount || 0,
+      page,
+      limit,
+      hasMore: (orders?.length || 0) === limit,
+    };
+
+    // Cache the response
+    cache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now(),
+    });
+
+    // Clean up old cache entries periodically
+    if (cache.size > 50) {
+      const now = Date.now();
+      for (const [key, value] of cache.entries()) {
+        if (!isCacheValid(value.timestamp)) {
+          cache.delete(key);
+        }
+      }
+    }
+
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'public, max-age=120', // 2 minutes
+      }
+    });
+
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(
