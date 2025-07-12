@@ -5,6 +5,8 @@ import { CiMenuFries } from "react-icons/ci";
 import { IoClose } from 'react-icons/io5';
 import { LuChevronRight } from 'react-icons/lu';
 import Link from 'next/link';
+import { FaInstagram } from 'react-icons/fa';
+import { FaYoutube, FaGoogle } from 'react-icons/fa';
 
 const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -61,85 +63,112 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
 
             {/* Sidebar Content */}
             <motion.div 
-              className="fixed top-0 left-0 h-full w-full   shadow-lg z-40 flex flex-col p-4 " 
+              className="fixed top-0 left-0 h-full w-full max-w-lg bg-black shadow-lg z-40 flex flex-col p-0 rounded-xl" 
               variants={sidebarVariants as any}
               initial="closed"
               animate="open"
               exit="closed"
             >
-           <div className='bg-white h-full w-full rounded-lg overflow-hidden'>
-               {/* Close Button */}
-              <div className="p-4 hover:bg-gray-100 text-gray-800 flex items-center justify-between border-b border-gray-200">
+              {/* Close Button */}
+              <div className="p-4 flex items-center justify-between border-b border-gray-700">
                 <div
                   onClick={toggleSidebar}
-                  className="rounded-md flex items-center gap-2 cursor-pointer"
+                  className="rounded-md flex items-center gap-2 cursor-pointer text-white hover:text-gray-300"
                 >
-                  <IoClose  size={24} className=''/>
+                  <IoClose size={24} />
                   <p>Close</p>
                 </div>
               </div>
 
               {/* Sidebar Items */}
-              <nav className="flex-1 p-4">
-                <ul className="space-y-4">
-                  <li className='flex items-center gap-2 justify-between'>
+              <nav className="flex-1 p-0">
+                <ul className="divide-y divide-gray-700">
+                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
                     <Link
-                      href="/shop"
-                      className="text-gray-800 hover:text-blue-600 text-lg"
-                      onClick={toggleSidebar}
+                      href="/shirts"
+                      className="text-white font-bold text-lg flex-1"
                     >
-                      Shop All
+                      SHIRTS
                     </Link>
-                    <LuChevronRight className="inline-block ml-2 text-gray-500" size={22}/>
+                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
                   </li>
-                  <li>
+                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
                     <Link
-                      href="/shop?category=tshirts"
-                      className="text-gray-800 hover:text-blue-600 text-lg"
-                      onClick={toggleSidebar}
+                      href="/jackets"
+                      className="text-white font-bold text-lg flex-1"
                     >
-                      T-Shirts
+                      JACKETS
                     </Link>
+                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
                   </li>
-                  <li>
+                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
                     <Link
-                      href="/shop?category=shirts"
-                      className="text-gray-800 hover:text-blue-600 text-lg"
-                      onClick={toggleSidebar}
+                      href="/hoodies"
+                      className="text-white font-bold text-lg flex-1"
                     >
-                      Shirts
+                      HOODIES
                     </Link>
+                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
                   </li>
-                  <li>
+                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
                     <Link
-                      href="/shop?category=jeans"
-                      className="text-gray-800 hover:text-blue-600 text-lg"
-                      onClick={toggleSidebar}
+                      href="/jeans"
+                      className="text-white font-bold text-lg flex-1"
                     >
-                      Jeans
+                      JEANS
                     </Link>
+                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
                   </li>
-                  <li>
+                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
                     <Link
-                      href="/about"
-                      className="text-gray-800 hover:text-blue-600 text-lg"
-                      onClick={toggleSidebar}
+                      href="/accessories"
+                      className="text-white font-bold text-lg flex-1"
                     >
-                      About Us
+                      ACCESSORIES
                     </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/contact"
-                      className="text-gray-800 hover:text-blue-600 text-lg"
-                      onClick={toggleSidebar}
-                    >
-                      Contact
-                    </Link>
+                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
                   </li>
                 </ul>
+                {/* About & Contact */}
+                <ul className="mt-auto divide-y divide-gray-700">
+                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
+                    <Link
+                      href="/about-us"
+                      className="text-white text-md flex-1"
+                    >
+                      ABOUT US
+                    </Link>
+                    <LuChevronRight className="inline-block ml-2 text-white" size={20}/>
+                  </li>
+                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
+                    <Link
+                      href="/contact"
+                      className="text-white text-md flex-1"
+                    >
+                      CONTACT US
+                    </Link>
+                    <LuChevronRight className="inline-block ml-2 text-white" size={20}/>
+                  </li>
+                </ul>
+                {/* Social Icons Row (placeholder, add icons as needed) */}
+                <div className="flex justify-center gap-8 py-4 border-t border-gray-700 mt-4">
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <span className="text-white text-2xl">
+                      <FaInstagram />
+                    </span>
+                  </a>
+                  <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                    <span className="text-white text-2xl">
+                      <FaYoutube />
+                    </span>
+                  </a>
+                  <a href="mailto:yourmail@gmail.com" target="_blank" rel="noopener noreferrer" aria-label="Gmail">
+                    <span className="text-white text-2xl">
+                      <FaGoogle />
+                    </span>
+                  </a>
+                </div>
               </nav>
-           </div>
             </motion.div>
           </>
         )}
