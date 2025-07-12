@@ -66,9 +66,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const initRef = useRef(false);
   const refreshingRef = useRef(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isAuthenticated = !!user;
   const isAdmin = userProfile?.role === 'admin';
+
+  // Force loading to false after timeout to prevent infinite loading
+  useEffect(() => {
+    if (loading) {
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.warn('Auth loading timeout reached, forcing loading to false');
+        setLoading(false);
+      }, 10000); // 10 second timeout
+    } else {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    }
+
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [loading]);
 
   // Optimized profile refresh
   const refreshProfile = useCallback(async () => {
@@ -98,66 +120,117 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initialize = async () => {
       try {
-        // Get current session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log('Auth: Starting initialization...');
+        
+        // Get current session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
+        );
+        
+        const { data: { session: currentSession } } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
+        
+        console.log('Auth: Session obtained', { hasSession: !!currentSession });
         
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
+          console.log('Auth: User found, loading profile...');
+          
           // Try to use stored profile for immediate display
           const stored = getStoredProfile();
           if (stored && stored.id === currentSession.user.id) {
+            console.log('Auth: Using stored profile');
             setUserProfile(stored);
           }
           
-          // Refresh profile in background
+          // Refresh profile in background with timeout
           try {
-            const profile = await getUserProfile(currentSession.user.id, false);
+            const profilePromise = getUserProfile(currentSession.user.id, false);
+            const profileTimeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+            );
+            
+            const profile = await Promise.race([
+              profilePromise,
+              profileTimeoutPromise
+            ]) as UserProfile;
+            
+            console.log('Auth: Profile fetched successfully', { role: profile?.role });
             setUserProfile(profile);
             setStoredProfile(profile);
           } catch (error) {
-            console.error('Profile fetch failed:', error);
+            console.error('Auth: Profile fetch failed:', error);
+            // If we have stored profile, keep using it
+            if (!userProfile) {
+              const stored = getStoredProfile();
+              if (stored && stored.id === currentSession.user.id) {
+                console.log('Auth: Falling back to stored profile');
+                setUserProfile(stored);
+              }
+            }
           }
         } else {
+          console.log('Auth: No user found');
           setUserProfile(null);
           setStoredProfile(null);
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error('Auth: Initialization error:', error);
+        // On any error, try to use stored data if available
+        const stored = getStoredProfile();
+        if (stored) {
+          console.log('Auth: Using stored profile after initialization error');
+          setUserProfile(stored);
+        }
       } finally {
+        console.log('Auth: Initialization complete, setting loading to false');
         setLoading(false);
       }
     };
 
-    initialize();
+    // Add a small delay to ensure all contexts are ready
+    setTimeout(initialize, 100);
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('Auth state change:', event);
+      console.log('Auth: State change:', event, { hasSession: !!newSession });
       
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
       if (event === 'SIGNED_OUT') {
+        console.log('Auth: User signed out');
         clearProfileCache();
         setStoredProfile(null);
         setUserProfile(null);
+        setLoading(false);
       } else if (event === 'SIGNED_IN' && newSession?.user) {
+        console.log('Auth: User signed in');
+        setLoading(true);
+        
         // Clear any existing profile data
         setUserProfile(null);
         
         // Load new profile
         try {
           const profile = await getUserProfile(newSession.user.id, true);
+          console.log('Auth: New profile loaded on sign in');
           setUserProfile(profile);
           setStoredProfile(profile);
         } catch (error) {
-          console.error('Profile load failed on sign in:', error);
+          console.error('Auth: Profile load failed on sign in:', error);
+        } finally {
+          setLoading(false);
         }
       } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
         // Only refresh if we don't have a profile or user changed
         if (!userProfile || userProfile.id !== newSession.user.id) {
+          console.log('Auth: Refreshing profile after token refresh');
           await refreshProfile();
         }
       }
