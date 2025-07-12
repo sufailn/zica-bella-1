@@ -83,7 +83,7 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
                   My Profile
                 </Link>
                 <Link
-                  href="/orders"
+                  href="/profile?tab=orders"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   onClick={() => setShowUserMenu(false)}
                 >

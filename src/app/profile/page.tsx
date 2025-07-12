@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -15,6 +16,7 @@ import { OrdersListSkeleton, ProfileFormSkeleton } from '@/components/common/Loa
 const ProfilePage = () => {
   const { userProfile, updateProfile, loading } = useAuth();
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses'>('profile');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(null);
@@ -61,6 +63,14 @@ const ProfilePage = () => {
     phone: '',
     isDefault: false,
   });
+
+  // Handle URL tab parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'orders' || tab === 'addresses') {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   // Initialize profile form with user data
   useEffect(() => {
