@@ -7,8 +7,9 @@ import { ProductProvider } from "@/context/ProductContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProfileProvider } from "@/context/ProfileContext";
-import PageLoader from "@/components/common/PageLoader";
-
+import CustomTopLoader from "@/components/common/CustomTopLoader";
+import RouterEvents from "@/components/common/RouterEvents";
+import NextTopLoader from 'nextjs-toploader';
 const rocaston = localFont({
   src: "../../public/fonts/Rocaston.ttf",
   variable: "--font-rocaston",
@@ -38,13 +39,15 @@ export default function RootLayout({
       <body
         className={`antialiased ${poppins.variable} bg-black`}
       >
+        <NextTopLoader color="#fff" height={3} showSpinner={false} />
+        <RouterEvents />
         <AuthProvider>
           <ToastProvider>
             <ProfileProvider>
               <ProductProvider>
-                <PageLoader>
+                <CustomTopLoader>
                   {children}
-                </PageLoader>
+                </CustomTopLoader>
               </ProductProvider>
             </ProfileProvider>
           </ToastProvider>

@@ -8,7 +8,7 @@ import { Navigation } from 'swiper/modules';
 import { useProducts } from "@/context/ProductContext";
 import { useToast } from "@/context/ToastContext";
 import { useRouter } from "next/navigation";
-import Loader from "@/components/common/SplashScreen";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton";
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -65,8 +65,22 @@ const ProductDetailPage = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <Loader />
+      <div className="min-h-screen bg-black">
+        <Navbar isHome={false} />
+        <div className="pt-24 max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+            <div className="space-y-6">
+              <LoadingSkeleton variant="product" />
+              <div className="space-y-4">
+                <LoadingSkeleton variant="text" className="h-8 w-3/4" />
+                <LoadingSkeleton variant="text" className="h-6 w-1/4" />
+                <LoadingSkeleton variant="text" className="h-4 w-1/2" />
+                <LoadingSkeleton variant="text" className="h-4 w-2/3" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }

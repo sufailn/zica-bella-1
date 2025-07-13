@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import { useProducts } from "@/context/ProductContext";
-import Loader from "@/components/common/SplashScreen";
+import { ProductGridSkeleton } from "@/components/common/LoadingSkeleton";
 
 // Lazy load components
 const ProductCard = lazy(() => import("@/components/Home/ProductSection/ProductCard"));
@@ -179,8 +179,8 @@ const CategoryPage = () => {
           
           {/* Products Grid */}
           {productsLoading ? (
-            <div className="mt-8 flex items-center justify-center py-16">
-              <Loader />
+            <div className="mt-8">
+              <ProductGridSkeleton count={8} />
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="mt-8 text-center py-16">

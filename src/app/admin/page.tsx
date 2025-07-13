@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { Order, UserProfile } from '@/lib/supabase';
-import Loader from '@/components/common/SplashScreen';
+import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 
 // Extended interface for orders with joined user data
 interface OrderWithUser extends Order {
@@ -178,8 +178,21 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <Loader />
+      <div className="min-h-screen bg-black text-white">
+        <div className="pt-24 max-w-7xl mx-auto px-4">
+          <div className="space-y-6">
+            <LoadingSkeleton variant="text" className="h-8 w-48" />
+            <LoadingSkeleton variant="text" className="h-6 w-96" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="bg-gray-900 p-6 rounded-lg">
+                  <LoadingSkeleton variant="text" className="h-4 w-20 mb-2" />
+                  <LoadingSkeleton variant="text" className="h-6 w-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

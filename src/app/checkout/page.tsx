@@ -8,7 +8,7 @@ import { IoArrowBack, IoCard, IoWallet, IoCash } from 'react-icons/io5';
 import AuthModal from '@/components/common/AuthModal';
 import { useAuthModal } from '@/hooks/useAuthModal';
 import { motion } from 'framer-motion';
-import Loader from '@/components/common/SplashScreen';
+import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 
 interface CustomerInfo {
   firstName: string;
@@ -51,7 +51,11 @@ interface PaymentInfo {
 const LoadingSpinner = ({ message, showDelayed }: { message: string; showDelayed: boolean }) => (
   <div className="min-h-screen bg-black text-white flex items-center justify-center">
     <div className="text-center">
-      <Loader />
+      <div className="space-y-4">
+        <LoadingSkeleton variant="text" className="h-8 w-48 mx-auto" />
+        <LoadingSkeleton variant="text" className="h-6 w-32 mx-auto" />
+        <LoadingSkeleton variant="text" className="h-4 w-24 mx-auto" />
+      </div>
       <motion.p 
         className="text-white text-lg mb-2 mt-4"
         initial={{ opacity: 0.5 }}

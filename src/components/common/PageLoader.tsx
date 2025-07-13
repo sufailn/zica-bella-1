@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import Loader from './SplashScreen';
+import SplashScreen from './SplashScreen';
 
 interface PageLoaderProps {
   children: React.ReactNode;
@@ -50,8 +50,8 @@ const PageLoader: React.FC<PageLoaderProps> = ({ children }) => {
   // Show loader while loading
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader />
+      <div className="min-h-screen w-screen bg-black flex items-center justify-center">
+        <SplashScreen />
       </div>
     );
   }

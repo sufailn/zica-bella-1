@@ -12,7 +12,7 @@ import ProfileGuard from '@/components/common/ProfileGuard';
 import { IoPersonOutline, IoLocationOutline, IoReceiptOutline, IoAdd, IoPencil, IoTrash } from 'react-icons/io5';
 import { motion } from 'framer-motion';
 import { OrdersListSkeleton, ProfileFormSkeleton } from '@/components/common/LoadingSkeleton';
-import Loader from '@/components/common/SplashScreen';
+import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 
 const ProfilePage = () => {
   const { userProfile, updateProfile, loading } = useAuth();
@@ -212,8 +212,19 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <Loader />
+      <div className="min-h-screen bg-black text-white">
+        <div className="pt-24 max-w-6xl mx-auto px-4">
+          <div className="space-y-6">
+            <LoadingSkeleton variant="text" className="h-8 w-48" />
+            <LoadingSkeleton variant="text" className="h-6 w-96" />
+            <div className="flex space-x-8 mb-8">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <LoadingSkeleton key={index} variant="text" className="h-6 w-20" />
+              ))}
+            </div>
+            <ProfileFormSkeleton />
+          </div>
+        </div>
       </div>
     );
   }
@@ -471,7 +482,7 @@ const ProfilePage = () => {
                           className="bg-white text-black px-6 py-2 rounded-md hover:bg-gray-200 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                           {isLoadingMoreOrders && (
-                            <Loader />
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           )}
                           Load More Orders
                         </button>
@@ -656,8 +667,19 @@ const ProfilePage = () => {
                 )}
 
                 {isLoadingAddresses ? (
-                  <div className="flex justify-center py-8">
-                    <Loader />
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="bg-gray-900 p-6 rounded-lg">
+                        <div className="flex justify-between items-start mb-4">
+                          <LoadingSkeleton variant="text" className="h-6 w-32" />
+                          <LoadingSkeleton variant="text" className="h-4 w-16" />
+                        </div>
+                        <div className="space-y-2">
+                          <LoadingSkeleton variant="text" className="h-4 w-full" />
+                          <LoadingSkeleton variant="text" className="h-4 w-3/4" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : addresses.length === 0 ? (
                   <div className="text-center py-12">

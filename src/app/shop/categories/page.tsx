@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
-import Loader from "@/components/common/SplashScreen";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton";
 
 interface Category {
   id: number;
@@ -79,8 +79,16 @@ const CategoriesPage = () => {
           
           {/* Categories Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="bg-gray-900 rounded-lg p-6 animate-pulse">
+                  <div className="text-center">
+                    <div className="h-6 bg-gray-800 rounded mb-3 mx-auto w-32"></div>
+                    <div className="h-4 bg-gray-800 rounded mx-auto w-48 mb-4"></div>
+                    <div className="h-4 bg-gray-800 rounded mx-auto w-24"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : categories.length === 0 ? (
             <div className="text-center py-16">

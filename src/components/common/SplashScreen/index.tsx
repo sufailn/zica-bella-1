@@ -21,23 +21,22 @@ const SplashScreen = () => {
     }
   } as const;
   return (
-    <div className="h-screen relative  w-screen">
+    <div className="h-screen  relative bg-black  w-screen">
       <svg
-        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+        className="fixed top-1/2 left-[55%] transform -translate-x-1/2 -translate-y-1/2  flex items-center justify-center "
         id="Layer_2"
         data-name="Layer 2"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 386.18 217.44"
       >
 
-        <g transform="translate(0.000000,233.000000) scale(0.100000,-0.100000)"
-          fill={isFilled ? "#000000" : "transparent"} stroke="none" >
+        <g transform="translate(0.000000,233.000000) scale(0.100000,-0.100000) "
+          fill={isFilled ? "#000000" : "transparent"} stroke="none" className="w-full h-full flex items-center justify-center  border-1 border-blue-500" >
           <motion.path stroke={strokeColor}
             strokeWidth={strokeWidth}
             fill=""
             variants={pathVariants}
             initial="hidden"
-            
             animate={isFilled ? "filled" : "visible"} d="M1342 2252 c-29 -27 -40 -45 -36 -56 4 -10 1 -16 -7 -16 -8 0 -40
 -14 -72 -31 -63 -33 -107 -33 -107 -1 0 9 -16 27 -34 39 -29 18 -35 20 -40 7
 -3 -8 3 -23 14 -34 11 -11 20 -21 20 -23 0 -1 -22 -4 -48 -5 -70 -3 -127 -25
