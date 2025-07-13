@@ -465,12 +465,13 @@ const ProductManagement: React.FC = () => {
 
                 {/* Price */}
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-white">Price *</label>
+                  <label className="block text-sm font-medium mb-1 text-white">Price (₹) *</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="1"
                     min="0"
                     required
+                    placeholder="Enter price in rupees"
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                     className="w-full p-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -662,7 +663,7 @@ const ProductManagement: React.FC = () => {
                   <span className="capitalize text-sm text-white">{product.category}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  ${product.price.toFixed(2)}
+                  ₹{product.price.toLocaleString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   <div className="flex items-center gap-2">

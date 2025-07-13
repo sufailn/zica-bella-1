@@ -125,7 +125,7 @@ const ProductDetailPage = () => {
                 {product.name}
               </h1>
               <p className="text-2xl font-bold text-white font-numbers">
-                ${product.price}
+                ₹{product.price.toLocaleString()}
               </p>
             </div>
 

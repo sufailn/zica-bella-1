@@ -91,7 +91,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               </div>
               <div>
                 <h3 className="font-medium text-black">{product.name}</h3>
-                <p className="text-lg font-semibold text-black">₹{product.price}</p>
+                <p className="text-lg font-semibold text-black">₹{product.price.toLocaleString()}</p>
               </div>
             </div>
 

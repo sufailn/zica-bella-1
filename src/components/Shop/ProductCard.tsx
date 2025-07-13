@@ -61,7 +61,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       </div>
       <div className="p-4 flex flex-col flex-1">
         <h3 className="font-medium text-lg mb-1 truncate">{product.name}</h3>
-        <div className="text-gray-500 text-sm mb-2">${product.price}</div>
+        <div className="text-gray-500 text-sm mb-2">₹{product.price.toLocaleString()}</div>
         <button className="mt-auto bg-black text-white rounded-md py-2 px-4 hover:bg-gray-800 transition">Add to Cart</button>
       </div>
     </div>

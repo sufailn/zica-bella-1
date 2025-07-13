@@ -81,7 +81,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
                       {item.selectedSize && <span>Size: {item.selectedSize}</span>}
                     </div>
                     <p className="text-sm font-semibold text-black mt-1">
-                      ₹{item.product.price}
+                      ₹{item.product.price.toLocaleString()}
                     </p>
                     
                     {/* Quantity Controls */}

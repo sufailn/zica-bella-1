@@ -243,7 +243,7 @@ const ProductCard = ({
               {product.name}
             </h3>
             <p className="text-sm text-white font-medium font-poppins">
-              ${product.price}
+                              ₹{product.price.toLocaleString()}
             </p>
           </div>
         </div>

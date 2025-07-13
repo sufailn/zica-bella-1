@@ -10,12 +10,12 @@ export async function POST() {
       )
     }
 
-    // Sample products data
+    // Sample products data with prices in Indian Rupees
     const sampleProducts = [
       {
         name: 'Classic White T-Shirt',
         description: 'Comfortable cotton t-shirt perfect for everyday wear',
-        price: 29.99,
+        price: 1499,
         images: ['/shop/products/tshirt-1/p (1).jpeg'],
         category: 'T-Shirts',
         stock_quantity: 50,
@@ -26,7 +26,7 @@ export async function POST() {
       {
         name: 'Premium Cotton Shirt',
         description: 'High-quality cotton shirt for formal occasions',
-        price: 59.99,
+        price: 2999,
         images: ['/shop/products/shirt-1/p (1).jpeg'],
         category: 'Shirts',
         stock_quantity: 30,
@@ -37,7 +37,7 @@ export async function POST() {
       {
         name: 'Slim Fit Jeans',
         description: 'Modern slim fit jeans with stretch comfort',
-        price: 79.99,
+        price: 3999,
         images: ['/shop/products/jeans-1/p (1).jpeg'],
         category: 'Jeans',
         stock_quantity: 25,
@@ -48,7 +48,7 @@ export async function POST() {
       {
         name: 'Graphic Print T-Shirt',
         description: 'Stylish graphic print t-shirt with unique design',
-        price: 34.99,
+        price: 1799,
         images: ['/shop/products/tshirt-2/p (1).jpeg'],
         category: 'T-Shirts',
         stock_quantity: 40,
@@ -59,7 +59,7 @@ export async function POST() {
       {
         name: 'Casual Denim Shirt',
         description: 'Versatile denim shirt for casual and smart casual looks',
-        price: 69.99,
+        price: 3499,
         images: ['/shop/products/shirt-2/p (1).jpeg'],
         category: 'Shirts',
         stock_quantity: 20,
