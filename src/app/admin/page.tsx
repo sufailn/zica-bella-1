@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { Order, UserProfile } from '@/lib/supabase';
+import Loader from '@/components/common/SplashScreen';
 
 // Extended interface for orders with joined user data
 interface OrderWithUser extends Order {
@@ -178,7 +179,7 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        <Loader />
       </div>
     );
   }

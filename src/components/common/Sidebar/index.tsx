@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CiMenuFries } from "react-icons/ci";
 import { IoClose } from 'react-icons/io5';
@@ -8,8 +8,17 @@ import Link from 'next/link';
 import { FaInstagram } from 'react-icons/fa';
 import { FaYoutube, FaGoogle } from 'react-icons/fa';
 
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+}
+
 const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const sidebarVariants = {
     open: {
@@ -36,6 +45,28 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
   };
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/categories');
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories');
+        }
+        
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   return (
     <>
@@ -83,58 +114,49 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
               {/* Sidebar Items */}
               <nav className="flex-1 p-0">
                 <ul className="divide-y divide-gray-700">
+                  {/* All Products Link */}
                   <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
                     <Link
-                      href="/shirts"
+                      href="/shop"
                       className="text-white font-bold text-lg flex-1"
+                      onClick={toggleSidebar}
                     >
-                      SHIRTS
+                      ALL PRODUCTS
                     </Link>
                     <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
                   </li>
-                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
-                    <Link
-                      href="/jackets"
-                      className="text-white font-bold text-lg flex-1"
-                    >
-                      JACKETS
-                    </Link>
-                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
-                  </li>
-                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
-                    <Link
-                      href="/hoodies"
-                      className="text-white font-bold text-lg flex-1"
-                    >
-                      HOODIES
-                    </Link>
-                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
-                  </li>
-                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
-                    <Link
-                      href="/jeans"
-                      className="text-white font-bold text-lg flex-1"
-                    >
-                      JEANS
-                    </Link>
-                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
-                  </li>
-                  <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
-                    <Link
-                      href="/accessories"
-                      className="text-white font-bold text-lg flex-1"
-                    >
-                      ACCESSORIES
-                    </Link>
-                    <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
-                  </li>
+                  
+                  {/* Dynamic Categories */}
+                  {loading ? (
+                    // Loading skeleton
+                    [...Array(3)].map((_, index) => (
+                      <li key={index} className='flex items-center gap-2 justify-between px-6 py-4'>
+                        <div className="h-6 bg-gray-700 rounded animate-pulse flex-1"></div>
+                        <div className="h-4 w-4 bg-gray-700 rounded animate-pulse"></div>
+                      </li>
+                    ))
+                  ) : (
+                    categories.map((category) => (
+                      <li key={category.id} className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
+                        <Link
+                          href={`/shop/category/${category.slug}`}
+                          className="text-white font-bold text-lg flex-1"
+                          onClick={toggleSidebar}
+                        >
+                          {category.name.toUpperCase()}
+                        </Link>
+                        <LuChevronRight className="inline-block ml-2 text-white" size={22}/>
+                      </li>
+                    ))
+                  )}
                 </ul>
                 {/* About & Contact */}
                 <ul className="mt-auto divide-y divide-gray-700">
                   <li className='flex items-center gap-2 justify-between px-6 py-4 hover:bg-gray-900 cursor-pointer'>
                     <Link
-                      href="/about-us"
+                      href="/about"
                       className="text-white text-md flex-1"
+                      onClick={toggleSidebar}
                     >
                       ABOUT US
                     </Link>
@@ -144,6 +166,7 @@ const Sidebar: React.FC<{isScrolled:boolean}> = ({isScrolled}) => {
                     <Link
                       href="/contact"
                       className="text-white text-md flex-1"
+                      onClick={toggleSidebar}
                     >
                       CONTACT US
                     </Link>

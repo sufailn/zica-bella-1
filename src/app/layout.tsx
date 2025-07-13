@@ -7,6 +7,7 @@ import { ProductProvider } from "@/context/ProductContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProfileProvider } from "@/context/ProfileContext";
+import PageLoader from "@/components/common/PageLoader";
 
 const rocaston = localFont({
   src: "../../public/fonts/Rocaston.ttf",
@@ -41,7 +42,9 @@ export default function RootLayout({
           <ToastProvider>
             <ProfileProvider>
               <ProductProvider>
-                {children}
+                <PageLoader>
+                  {children}
+                </PageLoader>
               </ProductProvider>
             </ProfileProvider>
           </ToastProvider>

@@ -177,6 +177,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
           // Extract unique categories
           const uniqueCategories = Array.from(new Set(processedProducts.map((p: Product) => p.category))) as string[];
           
+
+          
           // Update cache
           productCache = {
             data: rawProducts,
@@ -245,13 +247,32 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
   }, [fetchProducts]);
 
-  // Optimized category filtering
+  // Optimized category filtering with flexible matching
   const getProductsByCategory = useCallback((category: string): Product[] => {
     if (category === 'VIEW ALL') {
       return products;
     }
-    return products.filter(product => product.category === category);
-  }, [products]);
+    
+    // Try exact match first
+    let filtered = products.filter(product => product.category === category);
+    
+    // If no exact match, try case-insensitive match
+    if (filtered.length === 0) {
+      filtered = products.filter(product => 
+        product.category.toLowerCase() === category.toLowerCase()
+      );
+    }
+    
+    // If still no match, try partial match
+    if (filtered.length === 0) {
+      filtered = products.filter(product => 
+        product.category.toLowerCase().includes(category.toLowerCase()) ||
+        category.toLowerCase().includes(product.category.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [products, categories]);
 
   // Optimized product lookup
   const getProductById = useCallback((id: number): Product | undefined => {

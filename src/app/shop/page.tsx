@@ -1,11 +1,14 @@
 "use client";
 import { useState, lazy, Suspense } from "react";
+import Link from "next/link";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import { useProducts } from "@/context/ProductContext";
+import Loader from "@/components/common/SplashScreen";
 
 // Lazy load components
 const CategoryTabs = lazy(() => import("@/components/Home/ProductSection/CategoryTabs"));
+const CategoryLinks = lazy(() => import("@/components/Shop/CategoryLinks"));
 const ProductCard = lazy(() => import("@/components/Home/ProductSection/ProductCard"));
 
 // Loading fallback components
@@ -20,9 +23,25 @@ const ShopTitle = () => (
     <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 uppercase tracking-wide">
       Shop All
     </h1>
-    <p className="text-gray-400 max-w-2xl mx-auto">
+    <p className="text-gray-400 max-w-2xl mx-auto mb-6">
       Discover our complete collection of premium clothing and accessories
     </p>
+    <div className="flex justify-center">
+      <Link
+        href="/shop/categories"
+        className="inline-flex items-center text-white hover:text-gray-300 transition-colors text-sm"
+      >
+        <svg 
+          className="mr-2 w-4 h-4" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        Browse by Category
+      </Link>
+    </div>
   </div>
 );
 
@@ -76,17 +95,20 @@ const ShopPage = () => {
           {/* Shop Title */}
           <ShopTitle />
           
-          {/* Category Tabs */}
+          {/* Category Navigation */}
+          <Suspense fallback={<LoadingSkeleton />}>
+            <CategoryLinks />
+          </Suspense>
+          
+          {/* Category Tabs for filtering */}
           <Suspense fallback={<LoadingSkeleton />}>
             <CategoryTabs onCategoryChange={setActiveCategory} />
           </Suspense>
           
           {/* Products Grid */}
           {loading ? (
-            <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16 px-4">
-              {[...Array(8)].map((_, index) => (
-                <div key={index} className="h-80 bg-gray-900 animate-pulse rounded-lg" />
-              ))}
+            <div className="mt-8 flex items-center justify-center py-16">
+              <Loader />
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="mt-8 text-center py-16">

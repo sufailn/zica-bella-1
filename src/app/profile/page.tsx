@@ -12,6 +12,7 @@ import ProfileGuard from '@/components/common/ProfileGuard';
 import { IoPersonOutline, IoLocationOutline, IoReceiptOutline, IoAdd, IoPencil, IoTrash } from 'react-icons/io5';
 import { motion } from 'framer-motion';
 import { OrdersListSkeleton, ProfileFormSkeleton } from '@/components/common/LoadingSkeleton';
+import Loader from '@/components/common/SplashScreen';
 
 const ProfilePage = () => {
   const { userProfile, updateProfile, loading } = useAuth();
@@ -212,7 +213,7 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        <Loader />
       </div>
     );
   }
@@ -470,7 +471,7 @@ const ProfilePage = () => {
                           className="bg-white text-black px-6 py-2 rounded-md hover:bg-gray-200 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                           {isLoadingMoreOrders && (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                            <Loader />
                           )}
                           Load More Orders
                         </button>
@@ -656,7 +657,7 @@ const ProfilePage = () => {
 
                 {isLoadingAddresses ? (
                   <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    <Loader />
                   </div>
                 ) : addresses.length === 0 ? (
                   <div className="text-center py-12">

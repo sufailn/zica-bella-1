@@ -8,6 +8,7 @@ import { Navigation } from 'swiper/modules';
 import { useProducts } from "@/context/ProductContext";
 import { useToast } from "@/context/ToastContext";
 import { useRouter } from "next/navigation";
+import Loader from "@/components/common/SplashScreen";
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -65,10 +66,7 @@ const ProductDetailPage = () => {
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-center text-white">
-          <h2 className="text-2xl font-bold mb-4">Product not found</h2>
-          <p className="text-gray-400">The product you're looking for doesn't exist.</p>
-        </div>
+        <Loader />
       </div>
     );
   }
