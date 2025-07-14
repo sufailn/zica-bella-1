@@ -4,6 +4,7 @@ import Footer from '@/components/common/Footer';
 import Accordion from '@/components/common/Accordion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion } from 'framer-motion'
 
 export default function ContactPage() {
   return (
@@ -12,16 +13,26 @@ export default function ContactPage() {
     <div className="min-h-screen flex flex-col bg-black">
       <main className="flex-1 flex flex-col items-center justify-start pt-16 pb-12 px-2">
         {/* Header Section */}
-        <section className="w-full max-w-xl text-center mb-10 mt-10">
+        <motion.section
+          className="w-full max-w-xl text-center mb-10 mt-10"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <h1 className="text-3xl text-white mb-3 tracking-tight">Contact</h1>
           <p className="text-sm text-gray-300 mb-1">
             Dior Client Service Center is available Monday to Sunday from 11am to 7:30pm (IST).<br />
             Our Client Advisors will be delighted to assist you and provide personalized advice.
           </p>
-        </section>
+        </motion.section>
 
         {/* Accordions */}
-        <section className="w-full max-w-xl mb-8 divide-y divide-gray-700 bg-gray-900 rounded-lg shadow">
+        <motion.section
+          className="w-full max-w-xl mb-8 divide-y divide-gray-700 bg-gray-900 rounded-lg shadow"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           <Accordion title="Call us">
             <div>
               <p className="text-base font-medium text-blue-400 mb-1">+91 8000503392</p>
@@ -41,10 +52,15 @@ export default function ContactPage() {
           <Accordion title="Write us">
             <p className="text-sm text-gray-400">For any inquiries, please use the form on our website or email us at <a href="mailto:contact@dior.com" className="underline text-blue-400">contact@dior.com</a>.</p>
           </Accordion>
-        </section>
+        </motion.section>
 
         {/* Discover More Section */}
-        <section className="w-full max-w-xl mb-8">
+        <motion.section
+          className="w-full max-w-xl mb-8"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
           <h2 className="text-lg text-gray-200 text-center mb-4">Discover More</h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <Link href="#" className="flex flex-col items-center">
@@ -66,16 +82,21 @@ export default function ContactPage() {
             </div>
             <span className="text-xs mt-1 border-b border-gray-600 text-gray-300">Baby</span>
           </div>
-        </section>
+        </motion.section>
 
         {/* Newsletter Signup */}
-        <section className="w-full max-w-xl bg-gray-900 rounded-lg shadow p-6 mb-8">
+        <motion.section
+          className="w-full max-w-xl bg-gray-900 rounded-lg shadow p-6 mb-8"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
           <h2 className="text-base text-gray-200 mb-3 text-center">Inspire me with all the latest Dior news</h2>
           <form className="flex flex-col gap-3 items-center">
             <input type="email" className="w-full border border-gray-700 bg-gray-800 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-gray-400" placeholder="* E-mail" />
             <button type="submit" className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Confirm</button>
           </form>
-        </section>
+        </motion.section>
       </main>
       <Footer />
     </div>
