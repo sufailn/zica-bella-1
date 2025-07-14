@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import sharp from 'sharp'
 
 // POST /api/upload - Upload images to Supabase Storage
 export async function POST(request: NextRequest) {
@@ -46,7 +47,17 @@ export async function POST(request: NextRequest) {
 
         // Convert file to ArrayBuffer
         const arrayBuffer = await file.arrayBuffer()
-        const fileBuffer = new Uint8Array(arrayBuffer)
+        let fileBuffer = new Uint8Array(arrayBuffer)
+
+        // Compress image if JPEG or PNG
+        if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+          const compressed = await sharp(fileBuffer).jpeg({ quality: 80 }).toBuffer()
+          fileBuffer = new Uint8Array(compressed)
+        } else if (file.type === 'image/png') {
+          const compressed = await sharp(fileBuffer).png({ quality: 80, compressionLevel: 8 }).toBuffer()
+          fileBuffer = new Uint8Array(compressed)
+        }
+        // For GIFs and other formats, skip compression
 
         // Upload to Supabase Storage
         const { data, error } = await supabaseAdmin!.storage
