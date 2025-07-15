@@ -1,34 +1,28 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
   --font-rocaston: "Rocaston", "Inter", system-ui, -apple-system, sans-serif;
-  --font-poppins: var(--font-poppins);
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
+body, * {
+  font-family: var(--font-poppins), 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Logo text uses Rocaston font, everything else uses Glacial Indifference */
+.logo {
+  font-family: var(--font-rocaston), 'Inter', system-ui, -apple-system, sans-serif !important;
+}
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family:  var(--font-poppins), "Inter", system-ui, -apple-system, sans-serif;
 }
 
 @theme {
   --font-rocaston: var(--font-rocaston);
-  --font-poppins: var(--font-poppins);
 }
-
-
-
-
-
 
 /* globals.css or inside a module.css file if you're using CSS modules */
 .scrollbar-hide {
@@ -39,7 +33,6 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
-
 
 @keyframes intentionalZoom {
   0% {
