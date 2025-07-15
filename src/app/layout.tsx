@@ -25,7 +25,6 @@ const glacialIndifference = localFont({
   fallback: ["Inter", "system-ui", "-apple-system", "sans-serif"],
 });
 
-export const font = glacialIndifference;
 
 export const metadata: Metadata = {
   title: "Zica Bella",
@@ -40,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`antialiased ${glacialIndifference.variable} bg-black`}
+          className={`antialiased ${glacialIndifference.variable} ${rocaston.variable} bg-black`}
       >
         <NextTopLoader color="#fff" height={3} showSpinner={false} />
         <RouterEvents />

@@ -55,7 +55,7 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
           height={50}
           className="cursor-pointer"
         />
-        <p className={`${isScrolled ? "text-white" : "text-white"} font-rocaston`}>ZICA BELLA</p>
+        <p className={`${isScrolled ? "text-white" : "text-white"} font-rocaston logo`}>ZICA BELLA</p>
       </Link>
       <div className="flex items-center gap-3">
         {/* User Authentication */}

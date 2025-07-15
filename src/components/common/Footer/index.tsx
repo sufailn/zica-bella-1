@@ -14,7 +14,7 @@ const Footer = () => {
                         height={36}
                         className="h-9 w-auto"
                     />
-                    <span className="text-lg font-rocaston font-semibold tracking-wide">ZICA BELLA</span>
+                    <span className="text-lg font-rocaston font-semibold tracking-wide logo">ZICA BELLA</span>
                 </div>
                 <div className="flex space-x-4 text-lg">
                     <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><FaInstagram /></a>
