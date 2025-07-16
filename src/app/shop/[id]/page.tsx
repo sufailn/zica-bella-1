@@ -143,55 +143,87 @@ const ProductDetailPage = () => {
               </p>
             </div>
 
-            {/* Color Selection */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-white uppercase tracking-wide">
-                COLOR
-              </h3>
-              <div className="flex space-x-3">
-                {product.colors.map((color: any) => (
-                  <button
-                    key={color.name}
-                    onClick={() => color.available && setSelectedColor(color.name)}
-                    disabled={!color.available}
-                    className={`
-                      w-10 h-10 rounded-full border-2 transition-all duration-200
-                      ${selectedColor === color.name 
-                        ? 'border-white ring-2 ring-gray-500' 
-                        : 'border-gray-600'
-                      }
-                      ${!color.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
-                    `}
-                    style={{ backgroundColor: color.value }}
-                    title={color.name}
-                  />
-                ))}
+            {/* Color Selection with left icon and flexed colors */}
+            <div className="space-y-3 border-b border-gray-700 pb-4">
+              <div className="flex items-center mb-2">
+                <div className="flex items-center w-16 justify-center">
+                  <img src="/shop/icons/pants.png" alt="Pants Icon" className="w-10 h-10" />
+                </div>
+                <div className="flex-1 flex space-x-3">
+                  {product.colors.map((color: any) => (
+                    <button
+                      key={color.name}
+                      onClick={() => color.available && setSelectedColor(color.name)}
+                      disabled={!color.available}
+                      className={`
+                        w-10 h-10 rounded-full border-2 transition-all duration-200
+                        ${selectedColor === color.name 
+                          ? 'border-white ring-2 ring-gray-500' 
+                          : 'border-gray-600'
+                        }
+                        ${!color.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
+                      `}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Size Selection */}
-            <div className="space-y-3 ">
-              <h3 className="text-sm font-medium text-white uppercase tracking-wide">
-                SIZE
-              </h3>
-              <div className="flex space-x-3">
-                {product.sizes.map((size: any) => (
-                  <button
-                    key={size.name}
-                    onClick={() => size.available && setSelectedSize(size.name)}
-                    disabled={!size.available}
-                    className={`
-                      w-12 h-12 rounded-full border-2 text-sm font-medium transition-all duration-200
-                      ${selectedSize === size.name
-                        ? 'border-white bg-white text-black'
-                        : 'border-gray-600 text-white hover:border-gray-400'
-                      }
-                      ${!size.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    `}
-                  >
-                    {size.name}
-                  </button>
-                ))}
+            {/* Shirt color palette (if needed) */}
+            <div className="space-y-3 border-b border-gray-700 pb-4">
+              <div className="flex items-center mb-2">
+                <div className="flex items-center w-16 justify-center">
+                  <img src="/shop/icons/shirts.png" alt="Shirt Icon" className="w-10 h-10" />
+                </div>
+                <div className="flex-1 flex space-x-3">
+                  {product.colors.map((color: any) => (
+                    <button
+                      key={color.name}
+                      onClick={() => color.available && setSelectedColor(color.name)}
+                      disabled={!color.available}
+                      className={`
+                        w-10 h-10 rounded-full border-2 transition-all duration-200
+                        ${selectedColor === color.name 
+                          ? 'border-white ring-2 ring-gray-500' 
+                          : 'border-gray-600'
+                        }
+                        ${!color.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
+                      `}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Size Selection with left icon and flexed sizes */}
+            <div className="space-y-3 border-b border-gray-700 pb-4">
+              <div className="flex items-center mb-2">
+                <div className="flex items-center w-16 justify-center">
+                  <img src="/shop/icons/shirts.png" alt="Shirt Icon" className="w-10 h-10" />
+                </div>
+                <div className="flex-1 flex space-x-3">
+                  {product.sizes.map((size: any) => (
+                    <button
+                      key={size.name}
+                      onClick={() => size.available && setSelectedSize(size.name)}
+                      disabled={!size.available}
+                      className={`
+                        w-12 h-12 rounded-full border-2 text-sm font-medium transition-all duration-200
+                        ${selectedSize === size.name
+                          ? 'border-white bg-white text-black'
+                          : 'border-gray-600 text-white hover:border-gray-400'
+                        }
+                        ${!size.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                      `}
+                    >
+                      {size.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -219,19 +251,19 @@ const ProductDetailPage = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-4 pt-6">
+            {/* Action Buttons styled like screenshot */}
+            <div className="flex gap-2 pt-6">
               <button 
                 onClick={handleAddToCart}
                 disabled={!selectedSize || isAddingToCart}
-                className="w-full py-4 border-2 border-white text-white font-medium hover:bg-gray-900 transition-colors duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-4 border-2 border-white text-white font-bold text-base hover:bg-gray-900 transition-colors duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed bg-black"
               >
                 {isAddingToCart ? 'ADDING...' : 'ADD TO CART'}
               </button>
               <button 
                 onClick={handleBuyNow}
                 disabled={!selectedSize}
-                className="w-full py-4 bg-white text-black font-medium hover:bg-gray-200 transition-colors duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-4 bg-white text-black font-bold text-base border-2 border-white hover:bg-gray-200 transition-colors duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 BUY NOW
               </button>
