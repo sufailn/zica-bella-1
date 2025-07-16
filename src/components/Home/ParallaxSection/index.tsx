@@ -15,22 +15,22 @@ const ParallaxSection = () => {
     //     backgroundPosition: 'center',
     //   }}
     //  ></section>
-        <div className="relative  h-full overflow-hidden bg-fixed  bg-center  py-20">
+        <div className="relative  h-full overflow-hidden bg-fixed w-full  bg-center  py-20">
             {/* Fixed Background Image */}
             <div 
                 ref={parallaxRef}
-                className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+                className="absolute inset-0 w-screen h-full bg-cover bg-center bg-no-repeat"
                 style={{ 
                     backgroundImage: "url('/home/image2.jpeg')",
-                    backgroundSize: 'auto 100%',
+                    backgroundSize: 'auto 150%',
                     backgroundAttachment: 'fixed',
                     backgroundPosition: 'center',
                 }}
             />
             
             {/* Content that scrolls over the fixed background */}
-            <div className="relative z-10  flex flex-col items-center justify-center text-white text-center px-4">
-                <div className="max-w-4xl mx-auto">
+            <div className="relative z-10  flex flex-col items-center justify-center text-white text-center p-60 w-full">
+                {/* <div className="max-w-4xl mx-auto">
                     <p className="text-lg mb-6 opacity-90 font-light tracking-wide">
                         DISCOVER OUR COLLECTION
                     </p>
@@ -49,7 +49,7 @@ const ParallaxSection = () => {
                         </button>
                       
                     </div>
-                </div>
+                </div> */}
             </div>
             
             {/* Additional scrollable content to demonstrate the effect */}

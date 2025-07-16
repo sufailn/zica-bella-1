@@ -44,7 +44,7 @@ const CategoryTabs = ({ onCategoryChange }: CategoryTabsProps) => {
             key={category}
             onClick={() => handleTabClick(category)}
             className={`
-              relative px-4 py-3 w-32 text-sm font-medium whitespace-nowrap transition-colors duration-200
+              relative px-4 uppercase py-3 w-32 text-sm font-medium whitespace-nowrap transition-colors duration-200
               ${activeTab === category
                 ? 'bg-white text-black'
                 : 'text-gray-400 hover:text-gray-900'

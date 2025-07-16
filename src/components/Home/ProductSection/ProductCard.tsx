@@ -130,9 +130,9 @@ const ProductCard = ({
     <>
       <Link href={`/shop/${product.id}`} className="block">
         <div
-          className="group relative bg-black overflow-hidden pb-4 cursor-pointer"
+          className={`group relative bg-black overflow-hidden pb-4 cursor-pointer ${index % 2 == 0 ? "md:border-l-2 md:border-black" : ""}`}
           style={{
-            borderRight: isNotLastColumn ? "2px solid #000" : "none",
+            borderRight: isNotLastColumn && index % 2 == 0 ? "2px solid #000" : "none",
           }}
           ref={containerRef}
         >
@@ -167,7 +167,7 @@ const ProductCard = ({
             {/* Sold Out Badge */}
             {product.soldOut && (
               <div className="absolute top-3 right-3 bg-black px-3 py-1 text-xs font-medium text-white z-20">
-                SOLD OUT
+                SOLD OUT 
               </div>
             )}
 

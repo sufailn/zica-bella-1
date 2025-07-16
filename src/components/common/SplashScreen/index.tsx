@@ -23,7 +23,7 @@ const SplashScreen = () => {
   return (
     <div className="h-screen  relative bg-black  w-screen">
       <svg
-        className="fixed top-1/2 left-[55%] transform -translate-x-1/2 -translate-y-1/2  flex items-center justify-center "
+        className="fixed top-1/2 left-[55%] transform -translate-x-1/2 -translate-y-1/2  flex items-center justify-center md:scale-[30%]"
         id="Layer_2"
         data-name="Layer 2"
         xmlns="http://www.w3.org/2000/svg"

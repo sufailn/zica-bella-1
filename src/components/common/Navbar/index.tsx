@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { IoCartOutline, IoPersonOutline } from "react-icons/io5";
+import { IoBagOutline, IoCartOutline, IoPersonOutline } from "react-icons/io5";
 import Sidebar from "../Sidebar";
 import CartSidebar from "../CartSidebar";
 import AuthModal from "../AuthModal";
@@ -112,12 +112,28 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
             )}
           </div>
         ) : (
-          <button
-            onClick={authModal.openLogin}
-            className="hover:scale-110 transition-transform duration-200 text-sm font-medium"
-          >
-            Sign In
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 hover:scale-110 transition-transform duration-200"
+            >
+              <IoPersonOutline className="text-2xl" />
+              {/* <span className="hidden md:block text-sm">Account</span> */}
+            </button>
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                <button
+                  onClick={() => {
+                    authModal.openLogin();
+                    setShowUserMenu(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Sign In
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Cart */}
@@ -126,7 +142,7 @@ const Navbar = ({isHome}:{isHome:boolean}) => {
             onClick={() => setIsCartOpen(true)}
             className="relative p-2"
           >
-            <IoCartOutline className={`text-3xl cursor-pointer ${isScrolled ? "text-white" : "text-white"} hover:scale-110 transition-transform duration-200`} />
+            <IoBagOutline className={`text-2xl cursor-pointer ${isScrolled ? "text-white" : "text-white"} hover:scale-110 transition-transform duration-200`} />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
                 {cartCount > 99 ? '99+' : cartCount}

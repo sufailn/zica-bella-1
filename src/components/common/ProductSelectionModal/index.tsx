@@ -60,21 +60,29 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-50"
+        className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="bg-white/20 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl border border-white/30 backdrop-blur-lg"
+          style={{
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
+            backdropFilter: "blur(16px) saturate(180%)",
+            WebkitBackdropFilter: "blur(16px) saturate(180%)",
+            border: "1px solid rgba(255,255,255,0.3)",
+          }}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold text-black">Select Options</h2>
+          <div className="flex items-center justify-between p-4 border-b border-white/30">
+            <h2 className="text-lg font-semibold text-white">Select Options</h2>
             <button 
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full"
+              className="p-2 hover:bg-black rounded-full"
             >
-              <IoClose className="text-xl text-black" />
+              <IoClose className="text-xl text-white" />
             </button>
           </div>
 
@@ -90,16 +98,16 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                 />
               </div>
               <div>
-                <h3 className="font-medium text-black">{product.name}</h3>
-                <p className="text-lg font-semibold text-black">₹{product.price.toLocaleString()}</p>
+                <h3 className="font-medium text-white">{product.name}</h3>
+                <p className="text-lg font-semibold text-white">₹{product.price.toLocaleString()}</p>
               </div>
             </div>
 
             {/* Color Selection */}
             {product.colors && product.colors.length > 0 && (
               <div className="mb-6">
-                <h4 className="text-sm font-medium text-black mb-3">
-                  Color {selectedColor && <span className="text-gray-500">({selectedColor})</span>}
+                <h4 className="text-sm font-medium text-white mb-3">
+                  Color {selectedColor && <span className="text-black-500">({selectedColor})</span>}
                 </h4>
                 <div className="flex gap-2 flex-wrap">
                   {product.colors.map((color) => (
@@ -123,7 +131,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             {/* Size Selection */}
             {product.sizes && product.sizes.length > 0 && (
               <div className="mb-6">
-                <h4 className="text-sm font-medium text-black mb-3">Size</h4>
+                <h4 className="text-sm font-medium text-white mb-3">Size</h4>
                 <div className="flex gap-2 flex-wrap">
                   {product.sizes.map((size) => (
                     <button
@@ -133,7 +141,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       className={`px-4 py-2 border rounded-md text-sm font-medium transition-all duration-200 ${
                         selectedSize === size.name
                           ? 'border-black bg-black text-white'
-                          : 'border-gray-300 text-black hover:border-gray-400'
+                          : 'border-gray-300 text-white hover:border-gray-400'
                       } ${!size.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {size.name}
@@ -145,31 +153,34 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
 
             {/* Quantity Selection */}
             <div className="mb-6">
-              <h4 className="text-sm font-medium text-black mb-3">Quantity</h4>
+             {selectedColor && (
+              <>   <h4 className="text-sm font-medium text-white mb-3">Quantity</h4>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-100"
+                  className="w-8 h-8 border border-gray-300 rounded-md text-white flex items-center justify-center hover:bg-gray-100"
                 >
                   -
                 </button>
-                <span className="text-lg font-medium min-w-[40px] text-center">{quantity}</span>
+                <span className="text-lg font-medium min-w-[40px] text-center text-white">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-100"
+                  className="w-8 h-8 border border-gray-300 rounded-md text-white flex items-center justify-center hover:bg-gray-100"
                 >
                   +
                 </button>
-              </div>
+              </div></>
+              
+             )}
             </div>
           </div>
 
           {/* Footer */}
-          <div className="border-t p-4">
+          <div className="border-t border-white/30 p-4">
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 py-2 border border-gray-300 text-black rounded-md hover:bg-gray-50 transition"
+                className="flex-1 py-2 border border-gray-300 text-white rounded-md hover:bg-gray-50 transition"
               >
                 Cancel
               </button>
